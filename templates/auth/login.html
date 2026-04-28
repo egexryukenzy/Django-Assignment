@@ -1,0 +1,65 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="km-en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login – TaskFlow PM</title>
+<link rel="stylesheet" href="{% static 'css/main.css' %}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+<div class="auth-wrapper">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="logo-icon" style="width:52px;height:52px;border-radius:14px;margin:0 auto 12px;background:linear-gradient(135deg,#4f6ef7,#7c3aed);display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:800;color:white">T</div>
+      <h1>TaskFlow PM</h1>
+      <p>Project Management System / ប្រព័ន្ធគ្រប់គ្រងគម្រោង</p>
+    </div>
+
+    {% for message in messages %}
+    <div class="alert alert-error">{{ message }}</div>
+    {% endfor %}
+
+    <form method="post">
+      {% csrf_token %}
+      <div class="form-group">
+        <label class="form-label">Username / ឈ្មោះអ្នកប្រើ</label>
+        <input type="text" name="username" class="form-control" placeholder="Enter username" required autofocus>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password / លេខសម្ងាត់</label>
+        <div style="position:relative">
+          <input type="password" name="password" id="passInput" class="form-control" placeholder="Enter password" required style="padding-right:40px">
+          <button type="button" onclick="togglePass()" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-muted);cursor:pointer;padding:4px">
+            <i class="fa-solid fa-eye" id="eyeIcon"></i>
+          </button>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary w-100" style="justify-content:center;padding:11px">
+        <i class="fa-solid fa-right-to-bracket"></i> Login / ចូល
+      </button>
+    </form>
+
+    <div class="auth-divider">— or / ឬ —</div>
+    <a href="{% url 'register' %}" class="btn btn-secondary w-100" style="justify-content:center;padding:11px">
+      <i class="fa-solid fa-user-plus"></i> Create Account / បង្កើតគណនី
+    </a>
+
+    <div style="margin-top:20px;padding:14px;background:rgba(79,110,247,.08);border:1px solid rgba(79,110,247,.2);border-radius:10px;font-size:12px;color:var(--text-muted)">
+      <strong style="color:var(--accent)">Demo accounts:</strong><br>
+      Admin: <code>admin</code> / <code>admin123</code><br>
+      Member: <code>member1</code> / <code>member123</code>
+    </div>
+  </div>
+</div>
+<script>
+function togglePass() {
+  const input = document.getElementById('passInput');
+  const icon = document.getElementById('eyeIcon');
+  input.type = input.type === 'password' ? 'text' : 'password';
+  icon.className = input.type === 'password' ? 'fa-solid fa-eye' : 'fa-solid fa-eye-slash';
+}
+</script>
+</body>
+</html>

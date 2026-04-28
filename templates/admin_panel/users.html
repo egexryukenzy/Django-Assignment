@@ -1,0 +1,227 @@
+{% extends 'base.html' %}
+{% block title %}Manage Users{% endblock %}
+{% block page_title %}Manage Users / គ្រប់គ្រងអ្នកប្រើ{% endblock %}
+{% block topbar_extra %}
+<button class="btn btn-primary" onclick="showModal('createUserModal')">
+  <i class="fa-solid fa-user-plus"></i> Create User
+</button>
+{% endblock %}
+{% block content %}
+<div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+  <form method="get" style="flex:1;max-width:400px;display:flex;gap:8px">
+    <input type="text" name="q" class="form-control" placeholder="Search by username or email..." value="{{ q }}">
+    <button type="submit" class="btn btn-secondary"><i class="fa-solid fa-search"></i></button>
+  </form>
+  <span class="text-muted text-small">{{ users|length }} user(s)</span>
+</div>
+<div class="card">
+  <div class="card-body" style="padding:0">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>User / អ្នកប្រើ</th>
+          <th>Email</th>
+          <th>Role / តួនាទី</th>
+          <th>Joined / ចូលរួម</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in users %}
+        <tr>
+          <td>
+            <div style="display:flex;align-items:center;gap:10px">
+              <div class="user-avatar" style="width:32px;height:32px;font-size:12px;flex-shrink:0">
+                {% if u.avatar %}<img src="{{ u.avatar.url }}" alt="">{% else %}{{ u.username|first|upper }}{% endif %}
+              </div>
+              <div>
+                <div style="font-weight:600">{{ u.username }}</div>
+                <div style="font-size:11px;color:var(--text-muted)">{{ u.get_full_name }}</div>
+              </div>
+            </div>
+          </td>
+          <td class="text-muted text-small">{{ u.email }}</td>
+          <td>
+            <span class="badge {% if u.role == 'admin' %}badge-high{% else %}badge-todo{% endif %}">{{ u.role }}</span>
+          </td>
+          <td class="text-muted text-small">{{ u.date_joined|date:"M d, Y" }}</td>
+          <td>
+            <span class="badge {% if u.is_active %}badge-done{% else %}badge-critical{% endif %}">
+              {% if u.is_active %}Active{% else %}Inactive{% endif %}
+            </span>
+          </td>
+          <td>
+            {% if u != request.user %}
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+              <a href="{% url 'admin_toggle_user' u.id %}" class="btn btn-secondary btn-sm">
+                {% if u.is_active %}<i class="fa-solid fa-ban"></i> Deactivate{% else %}<i class="fa-solid fa-check"></i> Activate{% endif %}
+              </a>
+              <button class="btn btn-sm" style="background:var(--blue);color:#fff"
+                onclick="openEditModal({{ u.id }}, '{{ u.username }}', '{{ u.email }}', '{{ u.first_name }}', '{{ u.last_name }}', '{{ u.role }}')">
+                <i class="fa-solid fa-pen"></i> Edit
+              </button>
+              <button class="btn btn-sm" style="background:var(--red);color:#fff"
+                onclick="openDeleteModal({{ u.id }}, '{{ u.username }}')">
+                <i class="fa-solid fa-trash"></i> Delete
+              </button>
+            </div>
+            {% else %}
+            <span class="text-muted text-small">You</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text-muted)">No users found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Create User Modal -->
+<div class="modal-overlay" id="createUserModal">
+  <div class="modal-box" style="max-width:480px">
+    <div class="modal-header">
+      <div class="modal-title">Create New User / បង្កើតអ្នកប្រើថ្មី</div>
+      <button class="modal-close" onclick="hideModal('createUserModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <form method="post" action="{% url 'admin_create_user' %}">
+        {% csrf_token %}
+        <div class="grid-2">
+          <div class="form-group">
+            <label class="form-label">First Name</label>
+            <input type="text" name="first_name" class="form-control" placeholder="Dara">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Last Name</label>
+            <input type="text" name="last_name" class="form-control" placeholder="Chan">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Username <span style="color:var(--red)">*</span></label>
+          <input type="text" name="username" class="form-control" placeholder="darachan" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email <span style="color:var(--red)">*</span></label>
+          <input type="email" name="email" class="form-control" placeholder="dara@example.com" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password <span style="color:var(--red)">*</span></label>
+          <input type="password" name="password" class="form-control" placeholder="Min 6 characters" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Role / តួនាទី</label>
+          <select name="role" class="form-control">
+            <option value="member">Member / សមាជិក</option>
+            <option value="admin">Admin / អ្នកគ្រប់គ្រង</option>
+          </select>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end">
+          <button type="button" class="btn btn-secondary" onclick="hideModal('createUserModal')">Cancel</button>
+          <button type="submit" class="btn btn-primary"><i class="fa-solid fa-user-plus"></i> Create User</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Edit User Modal -->
+<div class="modal-overlay" id="editUserModal">
+  <div class="modal-box" style="max-width:480px">
+    <div class="modal-header">
+      <div class="modal-title">Edit User / កែប្រែអ្នកប្រើ</div>
+      <button class="modal-close" onclick="hideModal('editUserModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <form method="post" id="editUserForm" action="">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="update">
+        <div class="grid-2">
+          <div class="form-group">
+            <label class="form-label">First Name</label>
+            <input type="text" name="first_name" id="edit_first_name" class="form-control">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Last Name</label>
+            <input type="text" name="last_name" id="edit_last_name" class="form-control">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Username <span style="color:var(--red)">*</span></label>
+          <input type="text" name="username" id="edit_username" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email <span style="color:var(--red)">*</span></label>
+          <input type="email" name="email" id="edit_email" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Role / តួនាទី</label>
+          <select name="role" id="edit_role" class="form-control">
+            <option value="member">Member / សមាជិក</option>
+            <option value="admin">Admin / អ្នកគ្រប់គ្រង</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">New Password <span style="color:var(--text-muted);font-size:11px">(leave blank to keep current)</span></label>
+          <input type="password" name="password" class="form-control" placeholder="Min 6 characters">
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end">
+          <button type="button" class="btn btn-secondary" onclick="hideModal('editUserModal')">Cancel</button>
+          <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Delete User Modal -->
+<div class="modal-overlay" id="deleteUserModal">
+  <div class="modal-box" style="max-width:400px">
+    <div class="modal-header">
+      <div class="modal-title">Delete User / លុបអ្នកប្រើ</div>
+      <button class="modal-close" onclick="hideModal('deleteUserModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <p style="margin-bottom:16px">Are you sure you want to delete user <strong id="delete_username_label"></strong>? This action cannot be undone.</p>
+      <form method="post" id="deleteUserForm" action="">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="delete">
+        <div style="display:flex;gap:8px;justify-content:flex-end">
+          <button type="button" class="btn btn-secondary" onclick="hideModal('deleteUserModal')">Cancel</button>
+          <button type="submit" class="btn btn-sm" style="background:var(--red);color:#fff;padding:8px 16px">
+            <i class="fa-solid fa-trash"></i> Delete
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+{% block extra_js %}
+<script>
+function showModal(id) { document.getElementById(id).classList.add('show'); }
+function hideModal(id) { document.getElementById(id).classList.remove('show'); }
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) m.classList.remove('show'); });
+});
+
+function openEditModal(id, username, email, first_name, last_name, role) {
+  document.getElementById('edit_username').value = username;
+  document.getElementById('edit_email').value = email;
+  document.getElementById('edit_first_name').value = first_name;
+  document.getElementById('edit_last_name').value = last_name;
+  document.getElementById('edit_role').value = role;
+  document.getElementById('editUserForm').action = '/admin-panel/users/' + id + '/update/';
+  showModal('editUserModal');
+}
+
+function openDeleteModal(id, username) {
+  document.getElementById('delete_username_label').textContent = username;
+  document.getElementById('deleteUserForm').action = '/admin-panel/users/' + id + '/delete/';
+  showModal('deleteUserModal');
+}
+</script>
+{% endblock %}

@@ -1,0 +1,327 @@
+{% extends 'base.html' %}
+{% block title %}{{ board.name }} – {{ project.name }}{% endblock %}
+{% block page_title %}
+<div style="display:flex;align-items:center;gap:8px">
+  <a href="{% url 'project_detail' project.id %}" style="color:var(--text-muted);text-decoration:none;font-weight:400">{{ project.name }}</a>
+  <i class="fa-solid fa-chevron-right" style="font-size:11px;color:var(--text-faint)"></i>
+  <span>{{ board.name }}</span>
+</div>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+.kanban-board { padding-bottom: 24px; }
+.drop-placeholder {
+  height: 60px; border: 2px dashed var(--accent); border-radius: 8px;
+  background: rgba(79,110,247,.05); margin-bottom: 8px;
+}
+</style>
+{% endblock %}
+
+{% block topbar_extra %}
+<div style="display:flex;gap:8px;align-items:center">
+  {% if all_boards|length > 1 %}
+  <select onchange="location.href='{% url 'board' project.id 0 %}'.replace('0',this.value)" class="form-control" style="width:160px">
+    {% for b in all_boards %}
+    <option value="{{ b.id }}" {% if b.id == board.id %}selected{% endif %}>{{ b.name }}</option>
+    {% endfor %}
+  </select>
+  {% endif %}
+  <button class="btn btn-secondary btn-sm" onclick="showModal('filterModal')">
+    <i class="fa-solid fa-filter"></i> Filter
+  </button>
+  <a href="{% url 'project_detail' project.id %}" class="btn btn-secondary btn-sm">
+    <i class="fa-solid fa-gear"></i> Project
+  </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- Board Header -->
+<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+  {% for l in lists %}
+  <div style="display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--text-muted)">
+    <span style="width:8px;height:8px;border-radius:50%;background:{% if 'Do' in l.title and 'ing' in l.title %}var(--yellow){% elif 'Done' in l.title %}var(--green){% else %}var(--text-faint){% endif %}"></span>
+    {{ l.title }}: <strong style="color:var(--text-primary)">{{ l.cards.count }}</strong>
+  </div>
+  {% endfor %}
+  <div style="margin-left:auto;display:flex;gap:8px">
+    <div style="font-size:12px;color:var(--text-muted)">
+      <i class="fa-solid fa-users"></i> {{ members|length }} member(s)
+    </div>
+  </div>
+</div>
+
+<!-- Kanban Board -->
+<div class="kanban-board" id="kanbanBoard">
+  {% for list in lists %}
+  <div class="kanban-col" data-list-id="{{ list.id }}">
+    <div class="kanban-col-header">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="width:10px;height:10px;border-radius:50%;background:{% if 'Doing' in list.title %}var(--yellow){% elif 'Done' in list.title %}var(--green){% else %}var(--text-faint){% endif %}"></span>
+        <span class="kanban-col-title">{{ list.title }}</span>
+        <span class="col-count">{{ list.cards.count }}</span>
+      </div>
+      <button class="btn btn-icon btn-secondary" style="width:28px;height:28px;padding:0;font-size:12px" onclick="toggleAddCard({{ list.id }})">
+        <i class="fa-solid fa-plus"></i>
+      </button>
+    </div>
+
+    <!-- Cards drop zone -->
+    <div class="kanban-cards" id="cards-{{ list.id }}" ondragover="dragOver(event)" ondrop="drop(event, {{ list.id }})">
+      {% for card in list.cards.all %}
+      <div class="kanban-card" id="card-{{ card.id }}" draggable="true"
+           ondragstart="dragStart(event, {{ card.id }})"
+           ondragend="dragEnd(event)"
+           onclick="window.location='{% url 'card_detail' card.id %}'">
+        <div class="card-priority-bar {{ card.priority }}"></div>
+        <div class="kanban-card-title">{{ card.title }}</div>
+        {% if card.labels.all %}
+        <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px">
+          {% for label in card.labels.all %}
+          <span style="background:{{ label.color }}22;border:1px solid {{ label.color }}44;color:{{ label.color }};padding:1px 7px;border-radius:10px;font-size:10px;font-weight:600">{{ label.name }}</span>
+          {% endfor %}
+        </div>
+        {% endif %}
+        <div class="card-meta">
+          <span class="badge badge-{{ card.priority }}" style="font-size:10px">{{ card.priority }}</span>
+          {% if card.deadline %}
+          <span class="badge {% if card.is_overdue %}badge-overdue{% else %}badge-todo{% endif %}" style="font-size:10px">
+            <i class="fa-solid fa-calendar-days"></i> {{ card.deadline }}
+          </span>
+          {% endif %}
+          {% if card.comments.count %}
+          <span style="font-size:11px;color:var(--text-muted)"><i class="fa-regular fa-comment"></i> {{ card.comments.count }}</span>
+          {% endif %}
+          <div class="card-assignees">
+            {% for assignee in card.assignees.all|slice:":3" %}
+            <div class="card-assignee-avatar" title="{{ assignee.username }}">
+              {% if assignee.avatar %}<img src="{{ assignee.avatar.url }}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">
+              {% else %}{{ assignee.username|first|upper }}{% endif %}
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Add Card Form (inline) -->
+    <div class="add-card-form" id="addCardForm-{{ list.id }}">
+      <form method="post" action="{% url 'card_create' list.id %}">
+        {% csrf_token %}
+        <textarea name="title" class="form-control" rows="2" placeholder="Card title / ចំណងជើង..." required style="margin-bottom:8px;font-size:13px"></textarea>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px">
+          <select name="priority" class="form-control" style="font-size:12px">
+            <option value="low">🟢 Low</option>
+            <option value="medium" selected>🟡 Medium</option>
+            <option value="high">🟠 High</option>
+            <option value="critical">🔴 Critical</option>
+          </select>
+          <input type="date" name="deadline" class="form-control" style="font-size:12px">
+        </div>
+        <div style="display:flex;gap:6px">
+          <button type="submit" class="btn btn-primary btn-sm" style="flex:1;justify-content:center">
+            <i class="fa-solid fa-plus"></i> Add Card
+          </button>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="toggleAddCard({{ list.id }})">✕</button>
+        </div>
+      </form>
+    </div>
+
+    <button class="add-card-btn" onclick="toggleAddCard({{ list.id }})">
+      <i class="fa-solid fa-plus"></i> Add card / បន្ថែមការ្យ
+    </button>
+  </div>
+  {% endfor %}
+
+  <!-- Add List -->
+  <div style="flex-shrink:0;width:280px">
+    <div id="addListToggle">
+      <button class="btn btn-secondary" onclick="document.getElementById('addListToggle').style.display='none';document.getElementById('addListForm').style.display='block'" style="width:100%;justify-content:center;border-style:dashed">
+        <i class="fa-solid fa-plus"></i> Add List / បន្ថែមបញ្ជី
+      </button>
+    </div>
+    <div id="addListForm" style="display:none;background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:14px">
+      <form method="post" action="{% url 'list_create' board.id %}">
+        {% csrf_token %}
+        <input type="text" name="title" class="form-control" placeholder="List name..." required style="margin-bottom:10px" autofocus>
+        <div style="display:flex;gap:8px">
+          <button type="submit" class="btn btn-primary btn-sm" style="flex:1;justify-content:center">Add List</button>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('addListForm').style.display='none';document.getElementById('addListToggle').style.display='block'">✕</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Filter Modal -->
+<div class="modal-overlay" id="filterModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title">Filter Tasks / ត្រងការងារ</div>
+      <button class="modal-close" onclick="hideModal('filterModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Priority / អាទិភាព</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-sm filter-btn" data-filter="priority" data-value="">All</button>
+          <button class="btn btn-sm filter-btn badge-low" data-filter="priority" data-value="low">Low</button>
+          <button class="btn btn-sm filter-btn badge-medium" data-filter="priority" data-value="medium">Medium</button>
+          <button class="btn btn-sm filter-btn badge-high" data-filter="priority" data-value="high">High</button>
+          <button class="btn btn-sm filter-btn badge-critical" data-filter="priority" data-value="critical">Critical</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Assignee / អ្នកទទួលខុសត្រូវ</label>
+        <select id="filterAssignee" class="form-control">
+          <option value="">All members</option>
+          {% for m in members %}
+          <option value="{{ m.user.username }}">{{ m.user.username }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button class="btn btn-secondary" onclick="clearFilters()">Clear</button>
+        <button class="btn btn-primary" onclick="applyFilters();hideModal('filterModal')">Apply</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// ── Toggle add-card form
+function toggleAddCard(listId) {
+  const form = document.getElementById(`addCardForm-${listId}`);
+  const btn = form.nextElementSibling;
+  const isVisible = form.style.display === 'block';
+  form.style.display = isVisible ? 'none' : 'block';
+  btn.style.display = isVisible ? 'flex' : 'none';
+  if (!isVisible) form.querySelector('textarea').focus();
+}
+
+// ── Drag & Drop
+let draggedCardId = null;
+let draggedEl = null;
+
+function dragStart(e, cardId) {
+  draggedCardId = cardId;
+  draggedEl = e.currentTarget;
+  e.currentTarget.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+}
+
+function dragEnd(e) {
+  e.currentTarget.classList.remove('dragging');
+  document.querySelectorAll('.drop-placeholder').forEach(p => p.remove());
+}
+
+function dragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  const zone = e.currentTarget;
+  // Show placeholder
+  const existing = zone.querySelector('.drop-placeholder');
+  if (!existing) {
+    const ph = document.createElement('div');
+    ph.className = 'drop-placeholder';
+    zone.appendChild(ph);
+  }
+}
+
+function drop(e, listId) {
+  e.preventDefault();
+  document.querySelectorAll('.drop-placeholder').forEach(p => p.remove());
+  if (!draggedCardId) return;
+
+  const zone = document.getElementById(`cards-${listId}`);
+  const cards = zone.querySelectorAll('.kanban-card');
+  const position = cards.length;
+
+  // Move card in DOM
+  zone.appendChild(draggedEl);
+
+  // Update col counts
+  updateColCounts();
+
+  // AJAX update
+  fetch('/cards/move/', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+    body: JSON.stringify({ card_id: draggedCardId, list_id: listId, position: position })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.ok) {
+      // Update priority bar status color if needed
+      const bar = draggedEl.querySelector('.card-priority-bar');
+    }
+  });
+  draggedCardId = null;
+}
+
+function updateColCounts() {
+  document.querySelectorAll('.kanban-col').forEach(col => {
+    const count = col.querySelectorAll('.kanban-card').length;
+    col.querySelector('.col-count').textContent = count;
+  });
+}
+
+// ── Filter
+let activeFilters = { priority: '', assignee: '' };
+
+function applyFilters() {
+  activeFilters.assignee = document.getElementById('filterAssignee').value;
+  filterCards();
+}
+
+function clearFilters() {
+  activeFilters = { priority: '', assignee: '' };
+  document.getElementById('filterAssignee').value = '';
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('btn-primary'));
+  filterCards();
+}
+
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', function() {
+    const filter = this.dataset.filter;
+    activeFilters[filter] = this.dataset.value;
+    document.querySelectorAll(`.filter-btn[data-filter="${filter}"]`).forEach(b => b.classList.remove('btn-primary'));
+    this.classList.add('btn-primary');
+  });
+});
+
+function filterCards() {
+  document.querySelectorAll('.kanban-card').forEach(card => {
+    let show = true;
+    if (activeFilters.priority) {
+      const bar = card.querySelector('.card-priority-bar');
+      if (!bar.classList.contains(activeFilters.priority)) show = false;
+    }
+    card.style.display = show ? 'block' : 'none';
+  });
+  updateColCounts();
+}
+
+// ── Modal helpers
+function showModal(id) { document.getElementById(id).classList.add('show'); }
+function hideModal(id) { document.getElementById(id).classList.remove('show'); }
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.addEventListener('click', function(e) { if (e.target === this) this.classList.remove('show'); });
+});
+
+// ── CSRF cookie
+function getCookie(name) {
+  let val = null;
+  document.cookie.split(';').forEach(c => {
+    c = c.trim();
+    if (c.startsWith(name + '=')) val = decodeURIComponent(c.split('=')[1]);
+  });
+  return val;
+}
+</script>
+{% endblock %}

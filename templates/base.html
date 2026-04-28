@@ -1,0 +1,122 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="km-en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}TaskFlow PM{% endblock %} – Task Tracker</title>
+<link rel="stylesheet" href="{% static 'css/main.css' %}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+{% block extra_head %}{% endblock %}
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">T</div>
+    <div>
+      <div class="logo-text">TaskFlow</div>
+      <div class="logo-sub">Project Management</div>
+    </div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <div class="nav-section">Main / គ្រប់គ្រង</div>
+    <a href="{% url 'dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+      <span class="nav-icon"><i class="fa-solid fa-gauge-high"></i></span>
+      Dashboard / ទំព័រដើម
+    </a>
+    <a href="{% url 'projects' %}" class="nav-link {% if 'project' in request.resolver_match.url_name %}active{% endif %}">
+      <span class="nav-icon"><i class="fa-solid fa-folder-open"></i></span>
+      Projects / គម្រោង
+    </a>
+    <a href="{% url 'search' %}" class="nav-link {% if request.resolver_match.url_name == 'search' %}active{% endif %}">
+      <span class="nav-icon"><i class="fa-solid fa-magnifying-glass"></i></span>
+      Search / ស្វែងរក
+    </a>
+    <a href="{% url 'notifications' %}" class="nav-link {% if request.resolver_match.url_name == 'notifications' %}active{% endif %}">
+      <span class="nav-icon"><i class="fa-solid fa-bell"></i></span>
+      Notifications / ការជូនដំណឹង
+      {% if unread_count %}<span class="nav-badge">{{ unread_count }}</span>{% endif %}
+    </a>
+
+    {% if user.is_admin %}
+    <div class="nav-section" style="margin-top:8px">Admin / អ្នកគ្រប់គ្រង</div>
+    <a href="{% url 'admin_users' %}" class="nav-link {% if request.resolver_match.url_name == 'admin_users' %}active{% endif %}">
+      <span class="nav-icon"><i class="fa-solid fa-users-gear"></i></span>
+      Manage Users / អ្នកប្រើប្រាស់
+    </a>
+    <a href="{% url 'admin_reports' %}" class="nav-link {% if request.resolver_match.url_name == 'admin_reports' %}active{% endif %}">
+      <span class="nav-icon"><i class="fa-solid fa-chart-bar"></i></span>
+      Reports / របាយការណ៍
+    </a>
+    {% endif %}
+  </nav>
+
+  <div class="sidebar-footer">
+    <a href="{% url 'profile' %}" class="user-card">
+      <div class="user-avatar">
+        {% if user.avatar %}<img src="{{ user.avatar.url }}" alt="">
+        {% else %}{{ user.username|first|upper }}{% endif %}
+      </div>
+      <div class="user-info">
+        <div class="user-name">{{ user.get_full_name|default:user.username }}</div>
+        <div class="user-role">{{ user.role }}</div>
+      </div>
+    </a>
+    <a href="{% url 'logout' %}" class="nav-link" style="margin-top:4px; color: var(--red)">
+      <span class="nav-icon"><i class="fa-solid fa-right-from-bracket"></i></span>
+      Logout / ចាកចេញ
+    </a>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main-content">
+  <div class="topbar">
+    <button class="btn btn-icon btn-secondary hamburger" onclick="toggleSidebar()">
+      <i class="fa-solid fa-bars"></i>
+    </button>
+    <div class="topbar-title">{% block page_title %}{% endblock %}</div>
+    <div class="topbar-actions">
+      <form action="{% url 'search' %}" method="get" class="search-bar">
+        <i class="fa-solid fa-magnifying-glass" style="color:var(--text-faint)"></i>
+        <input type="text" name="q" placeholder="Search tasks... / ស្វែងរក" value="{{ request.GET.q }}">
+      </form>
+      <a href="{% url 'notifications' %}" class="btn btn-icon btn-secondary" style="position:relative">
+        <i class="fa-solid fa-bell"></i>
+        {% if unread_count %}<span style="position:absolute;top:4px;right:4px;width:8px;height:8px;background:var(--red);border-radius:50%"></span>{% endif %}
+      </a>
+      {% block topbar_extra %}{% endblock %}
+    </div>
+  </div>
+
+  <div class="page-content">
+    {% for message in messages %}
+    <div class="alert alert-{% if message.tags == 'error' %}error{% elif message.tags == 'success' %}success{% else %}info{% endif %}" style="margin-bottom:16px">
+      <i class="fa-solid fa-{% if message.tags == 'error' %}circle-xmark{% elif message.tags == 'success' %}circle-check{% else %}circle-info{% endif %}"></i>
+      {{ message }}
+    </div>
+    {% endfor %}
+    {% block content %}{% endblock %}
+  </div>
+</div>
+
+<script>
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+}
+// Close sidebar on outside click (mobile)
+document.addEventListener('click', function(e) {
+  const sidebar = document.getElementById('sidebar');
+  if (window.innerWidth <= 768 && sidebar.classList.contains('open')) {
+    if (!sidebar.contains(e.target) && !e.target.closest('.hamburger')) {
+      sidebar.classList.remove('open');
+    }
+  }
+});
+</script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

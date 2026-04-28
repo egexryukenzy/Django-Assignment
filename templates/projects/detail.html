@@ -1,0 +1,244 @@
+{% extends 'base.html' %}
+{% block title %}{{ project.name }}{% endblock %}
+{% block page_title %}{{ project.name }}{% endblock %}
+{% block topbar_extra %}
+{% with board=project.boards.first %}
+{% if board %}
+<a href="{% url 'board' project.id board.id %}" class="btn btn-primary">
+  <i class="fa-solid fa-kanban"></i> Open Board
+</a>
+{% endif %}
+{% endwith %}
+{% endblock %}
+{% block content %}
+<div style="display:grid;grid-template-columns:1fr 300px;gap:20px;align-items:start">
+  <!-- Main -->
+  <div>
+    <!-- Project Info -->
+    <div class="card mb-16">
+      <div class="card-header">
+        <div>
+          <div class="fw-700">Project Info / ព័ត៌មានគម្រោង</div>
+          <span class="badge {% if project.status == 'active' %}badge-doing{% else %}badge-todo{% endif %}" style="margin-top:4px">{{ project.status }}</span>
+        </div>
+        {% if request.user == project.owner or request.user.is_admin %}
+        <div style="display:flex;gap:8px">
+          <a href="{% url 'project_edit' project.id %}" class="btn btn-secondary btn-sm"><i class="fa-solid fa-pen"></i> Edit</a>
+          <form method="post" action="{% url 'project_delete' project.id %}" onsubmit="return confirm('Delete this project?')">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger btn-sm"><i class="fa-solid fa-trash"></i></button>
+          </form>
+        </div>
+        {% endif %}
+      </div>
+      <div class="card-body">
+        <p style="color:var(--text-muted);font-size:13.5px">{{ project.description|default:"No description provided." }}</p>
+        <div style="margin-top:16px">
+          <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-muted);margin-bottom:6px">
+            <span>Progress / វឌ្ឍនភាព</span>
+            <span>{{ project.done_cards }}/{{ project.total_cards }} tasks • {{ project.progress }}%</span>
+          </div>
+          <div class="progress-bar" style="height:8px">
+            <div class="progress-fill" style="width:{{ project.progress }}%"></div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:16px">
+          <div style="background:var(--bg-dark);border-radius:8px;padding:12px;text-align:center">
+            <div style="font-size:20px;font-weight:800;color:var(--accent)">{{ project.total_cards }}</div>
+            <div style="font-size:11px;color:var(--text-muted)">Total Tasks</div>
+          </div>
+          <div style="background:var(--bg-dark);border-radius:8px;padding:12px;text-align:center">
+            <div style="font-size:20px;font-weight:800;color:var(--green)">{{ project.done_cards }}</div>
+            <div style="font-size:11px;color:var(--text-muted)">Done</div>
+          </div>
+          <div style="background:var(--bg-dark);border-radius:8px;padding:12px;text-align:center">
+            <div style="font-size:20px;font-weight:800;color:var(--yellow)">{{ project.members.count }}</div>
+            <div style="font-size:11px;color:var(--text-muted)">Members</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Boards -->
+    <div class="card mb-16">
+      <div class="card-header">
+        <div class="fw-700">Boards / បន្ទះ</div>
+        <button class="btn btn-secondary btn-sm" onclick="showModal('boardModal')">
+          <i class="fa-solid fa-plus"></i> Add Board
+        </button>
+      </div>
+      <div class="card-body" style="padding:0">
+        {% for board in boards %}
+        <a href="{% url 'board' project.id board.id %}" style="display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:1px solid rgba(48,54,61,.5);text-decoration:none;color:inherit;transition:background .15s" onmouseover="this.style.background='rgba(255,255,255,.03)'" onmouseout="this.style.background=''">
+          <div style="width:10px;height:10px;border-radius:3px;background:{{ board.background }}"></div>
+          <div style="flex:1">
+            <div style="font-weight:600;font-size:13.5px">{{ board.name }}</div>
+            <div style="font-size:11px;color:var(--text-muted)">{{ board.lists.count }} lists</div>
+          </div>
+          <i class="fa-solid fa-arrow-right" style="color:var(--text-faint)"></i>
+        </a>
+        {% empty %}
+        <div style="padding:24px;text-align:center;color:var(--text-muted)">No boards yet.</div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Labels -->
+    <div class="card">
+      <div class="card-header">
+        <div class="fw-700">Labels / ស្លាក</div>
+        <button class="btn btn-secondary btn-sm" onclick="showModal('labelModal')"><i class="fa-solid fa-plus"></i> Add Label</button>
+      </div>
+      <div class="card-body" style="display:flex;flex-wrap:wrap;gap:8px">
+        {% for label in project.labels.all %}
+        <span style="background:{{ label.color }}22;border:1px solid {{ label.color }}44;color:{{ label.color }};padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600">
+          <span class="label-dot" style="background:{{ label.color }}"></span>{{ label.name }}
+        </span>
+        {% empty %}
+        <span class="text-muted text-small">No labels yet.</span>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Members Sidebar -->
+  <div>
+    <div class="card">
+      <div class="card-header">
+        <div class="fw-700">Members / សមាជិក</div>
+        {% if request.user == project.owner or request.user.is_admin %}
+        <button class="btn btn-secondary btn-sm" onclick="showModal('memberModal')">
+          <i class="fa-solid fa-user-plus"></i>
+        </button>
+        {% endif %}
+      </div>
+      <div class="card-body" style="padding:8px 0">
+        {% for m in members %}
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 16px;{% if not forloop.last %}border-bottom:1px solid rgba(48,54,61,.5){% endif %}">
+          <div class="user-avatar" style="width:32px;height:32px;font-size:12px">
+            {% if m.user.avatar %}<img src="{{ m.user.avatar.url }}" alt="">
+            {% else %}{{ m.user.username|first|upper }}{% endif %}
+          </div>
+          <div style="flex:1">
+            <div style="font-size:13px;font-weight:600">{{ m.user.get_full_name|default:m.user.username }}</div>
+            <div style="font-size:11px;color:var(--text-muted)">{{ m.role }}</div>
+          </div>
+          {% if request.user == project.owner and m.user != request.user %}
+          <a href="{% url 'project_remove_member' project.id m.user.id %}" style="color:var(--text-faint);font-size:12px" onclick="return confirm('Remove this member?')"><i class="fa-solid fa-xmark"></i></a>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add Member Modal -->
+<div class="modal-overlay" id="memberModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title">Add Member / បន្ថែមសមាជិក</div>
+      <button class="modal-close" onclick="hideModal('memberModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <form method="post" action="{% url 'project_add_member' project.id %}">
+        {% csrf_token %}
+        <div class="form-group">
+          <label class="form-label">Select User / ជ្រើសអ្នកប្រើ</label>
+          {% if all_users %}
+          <select name="user_id" class="form-control" required>
+            <option value="">-- Choose user --</option>
+            {% for u in all_users %}
+            <option value="{{ u.id }}">{{ u.username }}{% if u.get_full_name %} – {{ u.get_full_name }}{% endif %}</option>
+            {% endfor %}
+          </select>
+          {% else %}
+          <div style="background:rgba(79,110,247,.08);border:1px solid rgba(79,110,247,.2);border-radius:8px;padding:12px;font-size:13px;color:var(--text-muted)">
+            <i class="fa-solid fa-circle-info" style="color:var(--accent)"></i>
+            All registered users are already members of this project.<br>
+            {% if request.user.is_admin %}
+            <a href="{% url 'admin_users' %}" style="color:var(--accent)">Create a new user</a> first, then add them here.
+            {% else %}
+            Ask an admin to create a new user account.
+            {% endif %}
+          </div>
+          {% endif %}
+        </div>
+        <div class="form-group">
+          <label class="form-label">Role / តួនាទី</label>
+          <select name="role" class="form-control">
+            <option value="member">Member</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end">
+          <button type="button" class="btn btn-secondary" onclick="hideModal('memberModal')">Cancel</button>
+          <button type="submit" class="btn btn-primary"><i class="fa-solid fa-user-plus"></i> Add</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Add Board Modal -->
+<div class="modal-overlay" id="boardModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title">New Board / បន្ទះថ្មី</div>
+      <button class="modal-close" onclick="hideModal('boardModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <form method="post" action="{% url 'board_create' project.id %}">
+        {% csrf_token %}
+        <div class="form-group">
+          <label class="form-label">Board Name</label>
+          <input type="text" name="name" class="form-control" placeholder="Sprint 1" required>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end">
+          <button type="button" class="btn btn-secondary" onclick="hideModal('boardModal')">Cancel</button>
+          <button type="submit" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Create</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Add Label Modal -->
+<div class="modal-overlay" id="labelModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title">New Label / ស្លាកថ្មី</div>
+      <button class="modal-close" onclick="hideModal('labelModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <form method="post" action="{% url 'label_create' project.id %}">
+        {% csrf_token %}
+        <div class="grid-2">
+          <div class="form-group">
+            <label class="form-label">Label Name</label>
+            <input type="text" name="name" class="form-control" placeholder="Bug" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Color</label>
+            <input type="color" name="color" class="form-control" value="#3b82f6" style="height:40px;cursor:pointer">
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end">
+          <button type="button" class="btn btn-secondary" onclick="hideModal('labelModal')">Cancel</button>
+          <button type="submit" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Create</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+{% block extra_js %}
+<script>
+function showModal(id) { document.getElementById(id).classList.add('show'); }
+function hideModal(id) { document.getElementById(id).classList.remove('show'); }
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.addEventListener('click', function(e) { if (e.target === this) this.classList.remove('show'); });
+});
+</script>
+{% endblock %}

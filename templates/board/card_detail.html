@@ -1,0 +1,322 @@
+{% extends 'base.html' %}
+{% block title %}{{ card.title }}{% endblock %}
+{% block page_title %}
+<div style="display:flex;align-items:center;gap:8px;font-size:13px">
+  <a href="{% url 'project_detail' project.id %}" style="color:var(--text-muted);text-decoration:none">{{ project.name }}</a>
+  <i class="fa-solid fa-chevron-right" style="font-size:10px;color:var(--text-faint)"></i>
+  <a href="{% url 'board' project.id card.list.board.id %}" style="color:var(--text-muted);text-decoration:none">{{ card.list.board.name }}</a>
+  <i class="fa-solid fa-chevron-right" style="font-size:10px;color:var(--text-faint)"></i>
+  <span>Card Detail</span>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="card-detail-grid">
+  <!-- Left: Main -->
+  <div>
+    <!-- Card Header -->
+    <div class="card mb-16">
+      <div class="card-header">
+        <div style="flex:1">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px">
+            <span class="badge badge-{{ card.priority }}">{{ card.priority }}</span>
+            <span class="badge badge-{{ card.status }}">{{ card.status }}</span>
+            {% if card.is_overdue %}<span class="badge badge-overdue"><i class="fa-solid fa-triangle-exclamation"></i> Overdue</span>{% endif %}
+          </div>
+          <h2 style="font-size:18px;font-weight:800">{{ card.title }}</h2>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:4px">
+            Created by {{ card.created_by.username }} · {{ card.created_at|date:"M d, Y H:i" }}
+          </div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-secondary btn-sm" onclick="showModal('editModal')">
+            <i class="fa-solid fa-pen"></i> Edit
+          </button>
+          <a href="{% url 'card_delete' card.id %}" class="btn btn-danger btn-sm" onclick="return confirm('Delete this card?')">
+            <i class="fa-solid fa-trash"></i>
+          </a>
+        </div>
+      </div>
+      <div class="card-body">
+        {% if card.description %}
+        <div style="background:var(--bg-dark);border-radius:8px;padding:14px;font-size:13.5px;white-space:pre-line;color:var(--text-primary)">{{ card.description }}</div>
+        {% else %}
+        <div style="color:var(--text-faint);font-size:13px;font-style:italic">No description. Click Edit to add one.</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Labels -->
+    {% if card.labels.all %}
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+      {% for label in card.labels.all %}
+      <span style="background:{{ label.color }}22;border:1px solid {{ label.color }}55;color:{{ label.color }};padding:3px 12px;border-radius:20px;font-size:12px;font-weight:600">
+        {{ label.name }}
+      </span>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Comments -->
+    <div class="card mb-16">
+      <div class="card-header">
+        <div class="fw-700">Comments / មតិយោបល់ <span style="color:var(--text-muted);font-weight:400;font-size:12px">({{ comments|length }})</span></div>
+      </div>
+      <div class="card-body">
+        {% for comment in comments %}
+        <div class="comment-bubble">
+          <div class="comment-meta" style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <strong style="color:var(--text-primary)">{{ comment.user.username }}</strong>
+              <span> · {{ comment.created_at|timesince }} ago</span>
+            </div>
+            {% if comment.user == request.user %}
+            <a href="{% url 'comment_delete' comment.id %}" style="color:var(--text-faint);font-size:11px" onclick="return confirm('Delete comment?')">
+              <i class="fa-solid fa-trash"></i>
+            </a>
+            {% endif %}
+          </div>
+          <div class="comment-text">{{ comment.content }}</div>
+        </div>
+        {% empty %}
+        <div style="text-align:center;padding:20px;color:var(--text-muted);font-size:13px">
+          <i class="fa-regular fa-comment" style="font-size:24px;margin-bottom:8px;display:block;opacity:.3"></i>
+          No comments yet. Be the first!
+        </div>
+        {% endfor %}
+
+        <form method="post" style="margin-top:12px">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="comment">
+          <textarea name="content" class="form-control" rows="2" placeholder="Write a comment... / សរសេរមតិ..." required style="margin-bottom:8px"></textarea>
+          <button type="submit" class="btn btn-primary btn-sm"><i class="fa-solid fa-paper-plane"></i> Comment</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Attachments -->
+    <div class="card">
+      <div class="card-header">
+        <div class="fw-700">Attachments / ឯកសារ <span style="color:var(--text-muted);font-weight:400;font-size:12px">({{ attachments|length }})</span></div>
+      </div>
+      <div class="card-body">
+        {% for att in attachments %}
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(48,54,61,.4)">
+          <i class="fa-solid fa-paperclip" style="color:var(--text-muted)"></i>
+          <div style="flex:1">
+            <a href="{{ att.file.url }}" target="_blank" style="color:var(--accent);font-size:13px">{{ att.file_name }}</a>
+            <div style="font-size:11px;color:var(--text-muted)">{{ att.uploaded_by.username }} · {{ att.uploaded_at|date:"M d, Y" }}</div>
+          </div>
+        </div>
+        {% empty %}
+        <div style="color:var(--text-faint);font-size:13px;font-style:italic">No attachments.</div>
+        {% endfor %}
+        <form method="post" enctype="multipart/form-data" style="margin-top:14px">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="attach">
+          <div style="display:flex;gap:8px;align-items:center">
+            <input type="file" name="file" class="form-control" style="flex:1;font-size:12px">
+            <button type="submit" class="btn btn-secondary btn-sm"><i class="fa-solid fa-upload"></i> Upload</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Sidebar -->
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <!-- Quick Info -->
+    <div class="card">
+      <div class="card-header"><div class="fw-700">Details / ព័ត៌មានលម្អិត</div></div>
+      <div class="card-body" style="display:flex;flex-direction:column;gap:12px">
+        <div>
+          <div class="form-label">Status / ស្ថានភាព</div>
+          <span class="badge badge-{{ card.status }}">{{ card.get_status_display }}</span>
+        </div>
+        <div>
+          <div class="form-label">Priority / អាទិភាព</div>
+          <span class="badge badge-{{ card.priority }}">{{ card.get_priority_display }}</span>
+        </div>
+        {% if card.deadline %}
+        <div>
+          <div class="form-label">Deadline / ថ្ងៃកំណត់</div>
+          <span {% if card.is_overdue %}class="text-danger"{% endif %} style="font-size:13px;font-weight:600">
+            {% if card.is_overdue %}<i class="fa-solid fa-triangle-exclamation"></i> {% endif %}
+            {{ card.deadline }}
+          </span>
+        </div>
+        {% endif %}
+        <div>
+          <div class="form-label">List / បញ្ជី</div>
+          <span style="font-size:13px">{{ card.list.title }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Assignees -->
+    <div class="card">
+      <div class="card-header">
+        <div class="fw-700">Assignees / អ្នករទទួលខុសត្រូវ</div>
+        <button class="btn btn-secondary btn-sm" onclick="showModal('assignModal')"><i class="fa-solid fa-user-plus"></i></button>
+      </div>
+      <div class="card-body" style="padding:8px 0">
+        {% for m in members %}
+        {% if m.user.id in assigned_ids %}
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 16px">
+          <div class="user-avatar" style="width:28px;height:28px;font-size:11px">
+            {% if m.user.avatar %}<img src="{{ m.user.avatar.url }}" alt="">{% else %}{{ m.user.username|first|upper }}{% endif %}
+          </div>
+          <div style="flex:1;font-size:13px;font-weight:500">{{ m.user.get_full_name|default:m.user.username }}</div>
+          <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="unassign">
+            <input type="hidden" name="user_id" value="{{ m.user.id }}">
+            <button type="submit" style="background:none;border:none;color:var(--text-faint);cursor:pointer;font-size:12px">×</button>
+          </form>
+        </div>
+        {% endif %}
+        {% empty %}
+        <div style="padding:12px 16px;color:var(--text-muted);font-size:13px">No assignees.</div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Labels -->
+    <div class="card">
+      <div class="card-header">
+        <div class="fw-700">Labels / ស្លាក</div>
+        <button class="btn btn-secondary btn-sm" onclick="showModal('labelModal')"><i class="fa-solid fa-tag"></i></button>
+      </div>
+      <div class="card-body" style="display:flex;flex-wrap:wrap;gap:6px">
+        {% for label in card.labels.all %}
+        <span style="background:{{ label.color }}22;border:1px solid {{ label.color }}44;color:{{ label.color }};padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600">{{ label.name }}</span>
+        {% empty %}
+        <span style="color:var(--text-faint);font-size:13px">No labels</span>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Card Modal -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal-box" style="max-width:560px">
+    <div class="modal-header">
+      <div class="modal-title">Edit Card / កែប្រែ</div>
+      <button class="modal-close" onclick="hideModal('editModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="edit">
+        <div class="form-group">
+          <label class="form-label">Title / ចំណងជើង</label>
+          <input type="text" name="title" class="form-control" value="{{ card.title }}" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Description / ពិពណ៌នា</label>
+          <textarea name="description" class="form-control" rows="4">{{ card.description }}</textarea>
+        </div>
+        <div class="grid-2">
+          <div class="form-group">
+            <label class="form-label">Priority</label>
+            <select name="priority" class="form-control">
+              {% for val, label in card.PRIORITY_CHOICES %}
+              <option value="{{ val }}" {% if card.priority == val %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Status</label>
+            <select name="status" class="form-control">
+              {% for val, label in card.STATUS_CHOICES %}
+              <option value="{{ val }}" {% if card.status == val %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Deadline / ថ្ងៃកំណត់</label>
+          <input type="date" name="deadline" class="form-control" value="{{ card.deadline|default:'' }}">
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end">
+          <button type="button" class="btn btn-secondary" onclick="hideModal('editModal')">Cancel</button>
+          <button type="submit" class="btn btn-primary"><i class="fa-solid fa-save"></i> Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Assign Modal -->
+<div class="modal-overlay" id="assignModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title">Assign Member / ចាត់តាំង</div>
+      <button class="modal-close" onclick="hideModal('assignModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="assign">
+        <div class="form-group">
+          <label class="form-label">Select Member</label>
+          <select name="user_id" class="form-control" required>
+            <option value="">-- Choose member --</option>
+            {% for m in members %}
+            {% if m.user.id not in assigned_ids %}
+            <option value="{{ m.user.id }}">{{ m.user.username }}</option>
+            {% endif %}
+            {% endfor %}
+          </select>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end">
+          <button type="button" class="btn btn-secondary" onclick="hideModal('assignModal')">Cancel</button>
+          <button type="submit" class="btn btn-primary"><i class="fa-solid fa-user-plus"></i> Assign</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Labels Modal -->
+<div class="modal-overlay" id="labelModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title">Manage Labels / គ្រប់គ្រងស្លាក</div>
+      <button class="modal-close" onclick="hideModal('labelModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="label">
+        <div style="display:flex;flex-direction:column;gap:8px">
+          {% for label in labels %}
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:8px 12px;background:var(--bg-dark);border-radius:8px">
+            <input type="checkbox" name="label_ids" value="{{ label.id }}" {% if label in card.labels.all %}checked{% endif %}>
+            <span class="label-dot" style="background:{{ label.color }}"></span>
+            <span style="font-size:13px">{{ label.name }}</span>
+          </label>
+          {% empty %}
+          <div class="text-muted">No labels in this project. Create labels in Project settings.</div>
+          {% endfor %}
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
+          <button type="button" class="btn btn-secondary" onclick="hideModal('labelModal')">Cancel</button>
+          <button type="submit" class="btn btn-primary"><i class="fa-solid fa-tag"></i> Save Labels</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+{% block extra_js %}
+<script>
+function showModal(id) { document.getElementById(id).classList.add('show'); }
+function hideModal(id) { document.getElementById(id).classList.remove('show'); }
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.addEventListener('click', function(e) { if (e.target === this) this.classList.remove('show'); });
+});
+</script>
+{% endblock %}

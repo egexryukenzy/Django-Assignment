@@ -1,0 +1,117 @@
+{% extends 'base.html' %}
+{% block title %}Reports{% endblock %}
+{% block page_title %}Reports / របាយការណ៍{% endblock %}
+{% block content %}
+<!-- Stats -->
+<div class="grid-4 mb-24">
+  <div class="stat-card blue">
+    <div class="stat-icon"><i class="fa-solid fa-users"></i></div>
+    <div class="stat-number">{{ total_users }}</div>
+    <div class="stat-label">Total Users / អ្នកប្រើសរុប</div>
+  </div>
+  <div class="stat-card green">
+    <div class="stat-icon"><i class="fa-solid fa-folder"></i></div>
+    <div class="stat-number">{{ total_projects }}</div>
+    <div class="stat-label">Total Projects / គម្រោងសរុប</div>
+  </div>
+  <div class="stat-card yellow">
+    <div class="stat-icon"><i class="fa-solid fa-list-check"></i></div>
+    <div class="stat-number">{{ total_cards }}</div>
+    <div class="stat-label">Total Tasks / ការងារសរុប</div>
+  </div>
+  <div class="stat-card red">
+    <div class="stat-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+    <div class="stat-number">{{ overdue_count }}</div>
+    <div class="stat-label">Overdue Tasks / ហួសកំណត់</div>
+  </div>
+</div>
+
+<!-- Summary -->
+<div class="grid-2 mb-24">
+  <div class="card">
+    <div class="card-header"><div class="fw-700">Task Overview / ទិដ្ឋភាពការងារ</div></div>
+    <div class="card-body">
+      {% with done_pct=done_cards|stringformat:"d" %}
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px">
+            <span style="color:var(--green)"><i class="fa-solid fa-circle-check"></i> Done / បញ្ចប់</span>
+            <span class="fw-700">{{ done_cards }} / {{ total_cards }}</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill" style="width:{% if total_cards %}{% widthratio done_cards total_cards 100 %}{% else %}0{% endif %}%"></div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:4px">
+          <div style="background:var(--bg-dark);border-radius:8px;padding:12px;text-align:center">
+            <div style="font-size:22px;font-weight:800;color:var(--green)">{{ done_cards }}</div>
+            <div style="font-size:10px;color:var(--text-muted)">Done</div>
+          </div>
+          <div style="background:var(--bg-dark);border-radius:8px;padding:12px;text-align:center">
+            <div style="font-size:22px;font-weight:800;color:var(--accent)">{{ active_projects }}</div>
+            <div style="font-size:10px;color:var(--text-muted)">Active Projects</div>
+          </div>
+          <div style="background:var(--bg-dark);border-radius:8px;padding:12px;text-align:center">
+            <div style="font-size:22px;font-weight:800;color:var(--red)">{{ overdue_count }}</div>
+            <div style="font-size:10px;color:var(--text-muted)">Overdue</div>
+          </div>
+        </div>
+      </div>
+      {% endwith %}
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><div class="fw-700">System Info</div></div>
+    <div class="card-body" style="display:flex;flex-direction:column;gap:10px">
+      {% for item in projects_data|slice:":5" %}
+      <div>
+        <div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:4px">
+          <span style="font-weight:600">{{ item.name }}</span>
+          <span class="text-muted">{{ item.done }}/{{ item.total }} ({{ item.progress }}%)</span>
+        </div>
+        <div class="progress-bar" style="height:5px">
+          <div class="progress-fill" style="width:{{ item.progress }}%"></div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- Projects Table -->
+<div class="card">
+  <div class="card-header"><div class="fw-700">All Projects Report / របាយការណ៍គម្រោង</div></div>
+  <div class="card-body" style="padding:0">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Project</th>
+          <th>Members</th>
+          <th>Total Tasks</th>
+          <th>Done</th>
+          <th>Progress</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in projects_data %}
+        <tr>
+          <td style="font-weight:600">{{ p.name }}</td>
+          <td><span class="badge badge-todo">{{ p.members }}</span></td>
+          <td>{{ p.total }}</td>
+          <td><span class="badge badge-done">{{ p.done }}</span></td>
+          <td>
+            <div style="display:flex;align-items:center;gap:8px">
+              <div class="progress-bar" style="flex:1;height:5px">
+                <div class="progress-fill" style="width:{{ p.progress }}%"></div>
+              </div>
+              <span style="font-size:11px;color:var(--text-muted);min-width:32px">{{ p.progress }}%</span>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-muted)">No projects.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

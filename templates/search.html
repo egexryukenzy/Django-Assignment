@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% block title %}Search{% endblock %}
+{% block page_title %}Search / ស្វែងរក{% endblock %}
+{% block content %}
+<div style="max-width:800px">
+  <form method="get" style="display:flex;gap:10px;margin-bottom:24px">
+    <input type="text" name="q" class="form-control" placeholder="Search tasks, projects... / ស្វែងរក..." value="{{ q }}" autofocus style="flex:1;font-size:15px;padding:12px 16px">
+    <button type="submit" class="btn btn-primary" style="padding:0 20px"><i class="fa-solid fa-search"></i> Search</button>
+  </form>
+
+  {% if q %}
+  <!-- Projects Results -->
+  {% if projects %}
+  <div class="card mb-16">
+    <div class="card-header">
+      <div class="fw-700">Projects / គម្រោង <span class="col-count" style="margin-left:8px">{{ projects|length }}</span></div>
+    </div>
+    <div class="card-body" style="padding:0">
+      {% for p in projects %}
+      <a href="{% url 'project_detail' p.id %}" style="display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:1px solid rgba(48,54,61,.4);text-decoration:none;color:inherit;transition:background .15s" onmouseover="this.style.background='rgba(255,255,255,.03)'" onmouseout="this.style.background=''">
+        <i class="fa-solid fa-folder-open" style="color:var(--accent);font-size:18px;width:24px;text-align:center"></i>
+        <div>
+          <div style="font-weight:600">{{ p.name }}</div>
+          <div style="font-size:11px;color:var(--text-muted)">{{ p.total_cards }} tasks · {{ p.members.count }} members</div>
+        </div>
+        <span class="badge {% if p.status == 'active' %}badge-doing{% else %}badge-todo{% endif %}" style="margin-left:auto">{{ p.status }}</span>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Cards Results -->
+  {% if cards %}
+  <div class="card">
+    <div class="card-header">
+      <div class="fw-700">Tasks / ការងារ <span class="col-count" style="margin-left:8px">{{ cards|length }}</span></div>
+    </div>
+    <div class="card-body" style="padding:0">
+      {% for card in cards %}
+      <a href="{% url 'card_detail' card.id %}" style="display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:1px solid rgba(48,54,61,.4);text-decoration:none;color:inherit;transition:background .15s" onmouseover="this.style.background='rgba(255,255,255,.03)'" onmouseout="this.style.background=''">
+        <div style="width:8px;height:8px;border-radius:50%;flex-shrink:0;background:{% if card.priority == 'critical' %}var(--red){% elif card.priority == 'high' %}var(--orange){% elif card.priority == 'medium' %}var(--yellow){% else %}var(--green){% endif %}"></div>
+        <div style="flex:1">
+          <div style="font-weight:600">{{ card.title }}</div>
+          <div style="font-size:11px;color:var(--text-muted)">{{ card.list.board.project.name }} → {{ card.list.title }}</div>
+        </div>
+        <div style="display:flex;gap:6px;flex-shrink:0">
+          <span class="badge badge-{{ card.priority }}">{{ card.priority }}</span>
+          <span class="badge badge-{{ card.status }}">{{ card.status }}</span>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% if not projects and not cards %}
+  <div style="text-align:center;padding:64px;color:var(--text-muted)">
+    <i class="fa-solid fa-magnifying-glass" style="font-size:40px;margin-bottom:16px;display:block;opacity:.2"></i>
+    No results for "<strong>{{ q }}</strong>"
+  </div>
+  {% endif %}
+  {% else %}
+  <div style="text-align:center;padding:64px;color:var(--text-muted)">
+    <i class="fa-solid fa-magnifying-glass" style="font-size:40px;margin-bottom:16px;display:block;opacity:.2"></i>
+    Type to search tasks and projects
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

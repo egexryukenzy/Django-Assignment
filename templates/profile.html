@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% block title %}Profile{% endblock %}
+{% block page_title %}Profile / ព័ត៌មានអ្នកប្រើ{% endblock %}
+{% block content %}
+<div style="max-width:600px;margin:0 auto">
+  <div class="card">
+    <div class="card-header">
+      <div class="fw-700">Edit Profile / កែប្រែព័ត៌មាន</div>
+    </div>
+    <div class="card-body">
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px;padding:16px;background:var(--bg-dark);border-radius:10px">
+        <div class="user-avatar" style="width:64px;height:64px;font-size:24px">
+          {% if user.avatar %}<img src="{{ user.avatar.url }}" alt="">{% else %}{{ user.username|first|upper }}{% endif %}
+        </div>
+        <div>
+          <div style="font-size:18px;font-weight:800">{{ user.get_full_name|default:user.username }}</div>
+          <div style="color:var(--text-muted);font-size:13px">{{ user.email }}</div>
+          <span class="badge {% if user.role == 'admin' %}badge-high{% else %}badge-todo{% endif %}" style="margin-top:6px">{{ user.role }}</span>
+        </div>
+      </div>
+
+      <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="grid-2">
+          <div class="form-group">
+            <label class="form-label">First Name</label>
+            <input type="text" name="first_name" class="form-control" value="{{ user.first_name }}">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Last Name</label>
+            <input type="text" name="last_name" class="form-control" value="{{ user.last_name }}">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input type="email" name="email" class="form-control" value="{{ user.email }}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Avatar Photo</label>
+          <input type="file" name="avatar" class="form-control" accept="image/*">
+        </div>
+        <div class="form-group">
+          <label class="form-label">New Password (leave blank to keep current)</label>
+          <input type="password" name="new_password" class="form-control" placeholder="New password...">
+        </div>
+        <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px">
+          <a href="{% url 'dashboard' %}" class="btn btn-secondary">Cancel</a>
+          <button type="submit" class="btn btn-primary"><i class="fa-solid fa-save"></i> Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="grid-3 mt-16">
+    <div class="stat-card blue" style="text-align:center">
+      <div class="stat-number">{{ user.created_cards.count }}</div>
+      <div class="stat-label">Tasks Created</div>
+    </div>
+    <div class="stat-card green" style="text-align:center">
+      <div class="stat-number">{{ user.assigned_cards.count }}</div>
+      <div class="stat-label">Assigned Tasks</div>
+    </div>
+    <div class="stat-card yellow" style="text-align:center">
+      <div class="stat-number">{{ user.project_memberships.count }}</div>
+      <div class="stat-label">Projects</div>
+    </div>
+  </div>
+</div>
+{% endblock %}

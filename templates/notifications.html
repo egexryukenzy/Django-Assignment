@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% block title %}Notifications{% endblock %}
+{% block page_title %}Notifications / ការជូនដំណឹង{% endblock %}
+{% block content %}
+<div style="max-width:700px">
+  <div class="card">
+    <div class="card-body" style="padding:0">
+      {% for n in notifications %}
+      <div style="display:flex;align-items:flex-start;gap:12px;padding:14px 20px;border-bottom:1px solid rgba(48,54,61,.5);{% if not n.is_read %}background:rgba(79,110,247,.04){% endif %}">
+        <div style="width:36px;height:36px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+          {% if n.type == 'assigned' %}background:rgba(79,110,247,.15);color:var(--accent)
+          {% elif n.type == 'comment' %}background:rgba(46,160,67,.15);color:var(--green)
+          {% elif n.type == 'deadline' %}background:rgba(210,153,34,.15);color:var(--yellow)
+          {% else %}background:rgba(139,148,158,.1);color:var(--text-muted){% endif %}">
+          <i class="fa-solid fa-{% if n.type == 'assigned' %}user-check{% elif n.type == 'comment' %}comment{% elif n.type == 'deadline' %}clock{% else %}bell{% endif %}"></i>
+        </div>
+        <div style="flex:1">
+          <div style="font-size:13.5px;{% if not n.is_read %}font-weight:600{% endif %}">{{ n.message }}</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:3px">{{ n.created_at|timesince }} ago · {{ n.get_type_display }}</div>
+        </div>
+        {% if not n.is_read %}
+        <div style="width:8px;height:8px;border-radius:50%;background:var(--accent);flex-shrink:0;margin-top:6px"></div>
+        {% endif %}
+      </div>
+      {% empty %}
+      <div style="text-align:center;padding:64px;color:var(--text-muted)">
+        <i class="fa-solid fa-bell-slash" style="font-size:40px;margin-bottom:16px;display:block;opacity:.2"></i>
+        No notifications yet / មិនទាន់មានការជូនដំណឹង
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}
