@@ -86,7 +86,9 @@ def dashboard(request):
     if user.is_admin:
         projects = Project.objects.all()
     else:
-        member_ids = ProjectMember.objects.filter(user=user).values_list("project_id", flat=True)
+        member_ids = ProjectMember.objects.filter(user=user).values_list(
+            "project_id", flat=True
+        )
         projects = Project.objects.filter(
             Q(owner=user) | Q(id__in=member_ids)
         ).distinct()
@@ -107,7 +109,9 @@ def dashboard(request):
     todo_tasks = cards.filter(status="todo").count()
 
     # ─── MY TASKS ────────────────────────────
-    my_cards = cards.filter(assignees=user).exclude(status="done").order_by("deadline")[:5]
+    my_cards = (
+        cards.filter(assignees=user).exclude(status="done").order_by("deadline")[:5]
+    )
 
     # ─── OVERDUE ─────────────────────────────
     overdue_cards = [c for c in my_cards if c.is_overdue]
@@ -121,18 +125,15 @@ def dashboard(request):
         "projects": projects[:6],  # show latest 6 in dashboard
         "completed_projects": completed_projects,
         "active_projects": active_projects,
-
         # Tasks
         "total_tasks": total_tasks,
         "done_tasks": done_tasks,
         "doing_tasks": doing_tasks,
         "todo_tasks": todo_tasks,
         "total_projects": total_projects,
-
         # Cards
         "my_cards": my_cards,
         "overdue_cards": overdue_cards,
-
         # Notifications
         "notifications": notifications,
         "unread_count": unread_count,

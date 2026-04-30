@@ -1,5 +1,17 @@
 from rest_framework import serializers
-from .models import User, Project, ProjectMember, Board, List, Card, Label, Comment, Attachment, Notification, CardAssignment
+from .models import (
+    User,
+    Project,
+    ProjectMember,
+    Board,
+    List,
+    Card,
+    Label,
+    Comment,
+    Attachment,
+    Notification,
+    CardAssignment,
+)
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -7,7 +19,15 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'full_name', 'role', 'is_active', 'date_joined']
+        fields = [
+            "id",
+            "username",
+            "email",
+            "full_name",
+            "role",
+            "is_active",
+            "date_joined",
+        ]
 
     def get_full_name(self, obj):
         return obj.get_full_name() or obj.username
@@ -18,7 +38,7 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['username', 'email', 'password', 'first_name', 'last_name', 'role']
+        fields = ["username", "email", "password", "first_name", "last_name", "role"]
 
     def create(self, validated_data):
         return User.objects.create_user(**validated_data)
@@ -27,18 +47,18 @@ class RegisterSerializer(serializers.ModelSerializer):
 class LabelSerializer(serializers.ModelSerializer):
     class Meta:
         model = Label
-        fields = ['id', 'name', 'color', 'project']
+        fields = ["id", "name", "color", "project"]
 
 
 class ProjectMemberSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
     user_id = serializers.PrimaryKeyRelatedField(
-        queryset=User.objects.all(), source='user', write_only=True
+        queryset=User.objects.all(), source="user", write_only=True
     )
 
     class Meta:
         model = ProjectMember
-        fields = ['id', 'user', 'user_id', 'role', 'joined_at']
+        fields = ["id", "user", "user_id", "role", "joined_at"]
 
 
 class ProjectSerializer(serializers.ModelSerializer):
@@ -50,9 +70,20 @@ class ProjectSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Project
-        fields = ['id', 'name', 'description', 'status', 'owner',
-                  'members_count', 'total_cards', 'done_cards', 'progress', 'created_at', 'updated_at']
-        read_only_fields = ['owner', 'created_at', 'updated_at']
+        fields = [
+            "id",
+            "name",
+            "description",
+            "status",
+            "owner",
+            "members_count",
+            "total_cards",
+            "done_cards",
+            "progress",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["owner", "created_at", "updated_at"]
 
     def get_members_count(self, obj):
         return obj.members.count()
@@ -63,8 +94,16 @@ class BoardSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Board
-        fields = ['id', 'name', 'background', 'position', 'project', 'lists_count', 'created_at']
-        read_only_fields = ['created_at']
+        fields = [
+            "id",
+            "name",
+            "background",
+            "position",
+            "project",
+            "lists_count",
+            "created_at",
+        ]
+        read_only_fields = ["created_at"]
 
     def get_lists_count(self, obj):
         return obj.lists.count()
@@ -76,16 +115,33 @@ class CardSerializer(serializers.ModelSerializer):
     labels = LabelSerializer(many=True, read_only=True)
     is_overdue = serializers.BooleanField(read_only=True)
     comments_count = serializers.SerializerMethodField()
-    list_title = serializers.CharField(source='list.title', read_only=True)
-    project_name = serializers.CharField(source='list.board.project.name', read_only=True)
+    list_title = serializers.CharField(source="list.title", read_only=True)
+    project_name = serializers.CharField(
+        source="list.board.project.name", read_only=True
+    )
 
     class Meta:
         model = Card
-        fields = ['id', 'title', 'description', 'priority', 'status', 'deadline',
-                  'position', 'list', 'list_title', 'project_name',
-                  'created_by', 'assignees', 'labels',
-                  'is_overdue', 'comments_count', 'created_at', 'updated_at']
-        read_only_fields = ['created_by', 'created_at', 'updated_at']
+        fields = [
+            "id",
+            "title",
+            "description",
+            "priority",
+            "status",
+            "deadline",
+            "position",
+            "list",
+            "list_title",
+            "project_name",
+            "created_by",
+            "assignees",
+            "labels",
+            "is_overdue",
+            "comments_count",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["created_by", "created_at", "updated_at"]
 
     def get_comments_count(self, obj):
         return obj.comments.count()
@@ -97,8 +153,16 @@ class ListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = List
-        fields = ['id', 'title', 'position', 'board', 'cards_count', 'cards', 'created_at']
-        read_only_fields = ['created_at']
+        fields = [
+            "id",
+            "title",
+            "position",
+            "board",
+            "cards_count",
+            "cards",
+            "created_at",
+        ]
+        read_only_fields = ["created_at"]
 
     def get_cards_count(self, obj):
         return obj.cards.count()
@@ -109,8 +173,8 @@ class CommentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Comment
-        fields = ['id', 'content', 'user', 'card', 'created_at', 'updated_at']
-        read_only_fields = ['user', 'created_at', 'updated_at']
+        fields = ["id", "content", "user", "card", "created_at", "updated_at"]
+        read_only_fields = ["user", "created_at", "updated_at"]
 
 
 class AttachmentSerializer(serializers.ModelSerializer):
@@ -119,25 +183,33 @@ class AttachmentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Attachment
-        fields = ['id', 'file_name', 'file_url', 'file', 'card', 'uploaded_by', 'uploaded_at']
-        read_only_fields = ['uploaded_by', 'uploaded_at', 'file_name']
+        fields = [
+            "id",
+            "file_name",
+            "file_url",
+            "file",
+            "card",
+            "uploaded_by",
+            "uploaded_at",
+        ]
+        read_only_fields = ["uploaded_by", "uploaded_at", "file_name"]
 
     def get_file_url(self, obj):
-        request = self.context.get('request')
+        request = self.context.get("request")
         if obj.file and request:
             return request.build_absolute_uri(obj.file.url)
         return None
 
     def create(self, validated_data):
-        validated_data['file_name'] = validated_data['file'].name
+        validated_data["file_name"] = validated_data["file"].name
         return super().create(validated_data)
 
 
 class NotificationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Notification
-        fields = ['id', 'type', 'message', 'link', 'is_read', 'created_at']
-        read_only_fields = ['type', 'message', 'link', 'created_at']
+        fields = ["id", "type", "message", "link", "is_read", "created_at"]
+        read_only_fields = ["type", "message", "link", "created_at"]
 
 
 class CardMoveSerializer(serializers.Serializer):
