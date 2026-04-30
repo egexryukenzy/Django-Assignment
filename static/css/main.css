@@ -393,3 +393,172 @@ textarea.form-control { resize: vertical; min-height: 80px; }
 .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
 .grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; }
 @media (max-width: 900px) { .grid-4 { grid-template-columns: 1fr 1fr; } .grid-3 { grid-template-columns: 1fr; } }
+/* ===============================
+   LIGHT MODE REBUILD
+================================ */
+
+body,
+.sidebar,
+.topbar,
+.card,
+.stat-card,
+.project-card,
+.kanban-col,
+.kanban-card,
+.modal-box,
+.auth-card,
+.form-control,
+.search-bar,
+.btn-secondary {
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+body.light-mode {
+  --bg-dark: #f4f6fb;
+  --bg-card: #ffffff;
+  --bg-sidebar: #ffffff;
+  --bg-hover: #e8eef7;
+  --border: #d1d5db;
+
+  --text-primary: #0f172a;
+  --text-muted: #64748b;
+  --text-faint: #94a3b8;
+
+  background: var(--bg-dark);
+  color: var(--text-primary);
+}
+
+/* Main layout */
+body.light-mode .main-content,
+body.light-mode .page-content {
+  background: var(--bg-dark);
+}
+
+/* Sidebar */
+body.light-mode .sidebar {
+  background: var(--bg-sidebar);
+  border-right-color: var(--border);
+}
+
+body.light-mode .sidebar-logo {
+  border-bottom-color: var(--border);
+}
+
+body.light-mode .logo-text,
+body.light-mode .topbar-title,
+body.light-mode .fw-700,
+body.light-mode .user-name,
+body.light-mode .project-name,
+body.light-mode .kanban-card-title,
+body.light-mode .kanban-col-title,
+body.light-mode .modal-title {
+  color: var(--text-primary);
+}
+
+body.light-mode .logo-sub,
+body.light-mode .nav-section,
+body.light-mode .user-role,
+body.light-mode .project-desc,
+body.light-mode .stat-label,
+body.light-mode .form-label,
+body.light-mode .text-muted {
+  color: var(--text-muted);
+}
+
+body.light-mode .nav-link {
+  color: var(--text-muted);
+}
+
+body.light-mode .nav-link:hover,
+body.light-mode .nav-link.active {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+/* Topbar */
+body.light-mode .topbar {
+  background: var(--bg-card);
+  border-bottom-color: var(--border);
+}
+
+/* Cards */
+body.light-mode .card,
+body.light-mode .stat-card,
+body.light-mode .project-card,
+body.light-mode .kanban-col,
+body.light-mode .modal-box,
+body.light-mode .auth-card {
+  background: var(--bg-card);
+  border-color: var(--border);
+  color: var(--text-primary);
+}
+
+body.light-mode .kanban-card,
+body.light-mode .comment-bubble {
+  background: #f8fafc;
+  border-color: var(--border);
+  color: var(--text-primary);
+}
+
+/* Forms */
+body.light-mode .form-control,
+body.light-mode .search-bar {
+  background: #ffffff;
+  border-color: var(--border);
+  color: var(--text-primary);
+}
+
+body.light-mode .form-control::placeholder,
+body.light-mode .search-bar input::placeholder {
+  color: var(--text-faint);
+}
+
+body.light-mode .search-bar input {
+  color: var(--text-primary);
+}
+
+/* Buttons */
+body.light-mode .btn-secondary {
+  background: #eef2f7;
+  border-color: var(--border);
+  color: var(--text-primary);
+}
+
+body.light-mode .btn-secondary:hover {
+  background: #e2e8f0;
+}
+
+/* Table */
+body.light-mode .table th {
+  color: var(--text-muted);
+  border-bottom-color: var(--border);
+}
+
+body.light-mode .table td {
+  color: var(--text-primary);
+  border-bottom-color: #e5e7eb;
+}
+
+body.light-mode .table tr:hover td {
+  background: #f8fafc;
+}
+
+/* Progress */
+body.light-mode .progress-bar {
+  background: #e5e7eb;
+}
+
+/* Dashboard dark cards fix */
+body.light-mode .stat-number {
+  color: var(--text-primary);
+}
+
+body.light-mode .card-header {
+  border-bottom-color: var(--border);
+}
+
+/* Quick action buttons */
+body.light-mode .quick-actions .btn,
+body.light-mode .card .btn-secondary {
+  color: var(--text-primary);
+}

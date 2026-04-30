@@ -1,8 +1,18 @@
 {% extends 'base.html' %}
 
+<<<<<<< HEAD
 {% block title %}Dashboard{% endblock %}
 
 {% block page_title %} Dashboard / ទំព័រដើម {% endblock %}
+=======
+{% block title %}
+Dashboard
+{% endblock %}
+
+{% block page_title %}
+Dashboard / ទំព័រដើម
+{% endblock %}
+>>>>>>> 908c8a5 (fixed)
 
 {% block topbar_extra %}
 <a href="{% url 'project_create' %}" class="btn btn-primary">
@@ -40,9 +50,17 @@
 </div>
 
 <div style="display: grid; grid-template-columns: 1fr 340px; gap: 20px; align-items: start;">
+<<<<<<< HEAD
   <!-- LEFT COLUMN -->
   <div>
     <!-- Projects Card -->
+=======
+
+  <!-- LEFT -->
+  <div>
+
+    <!-- Projects -->
+>>>>>>> 908c8a5 (fixed)
     <div class="card mb-24">
       <div class="card-header">
         <div>
@@ -57,15 +75,25 @@
       <div class="card-body">
         {% if projects %}
         <div class="project-grid" style="grid-template-columns: repeat(auto-fill, minmax(260px, 1fr))">
+<<<<<<< HEAD
+=======
+
+>>>>>>> 908c8a5 (fixed)
           {% for project in projects %}
           <a href="{% url 'project_detail' project.id %}" class="project-card">
+
             <div class="project-name">{{ project.name }}</div>
             <div class="project-desc">
               {{ project.description|truncatechars:60|default:"No description" }}
             </div>
 
+<<<<<<< HEAD
             <div style="margin-bottom: 12px;">
               <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted); margin-bottom: 6px;">
+=======
+            <div>
+              <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--text-muted); margin-bottom:6px;">
+>>>>>>> 908c8a5 (fixed)
                 <span>{{ project.done_cards }}/{{ project.total_cards }} tasks done</span>
                 <span>{{ project.progress }}%</span>
               </div>
@@ -74,19 +102,32 @@
               </div>
             </div>
 
+<<<<<<< HEAD
             <div style="display: flex; justify-content: space-between; align-items: center;">
+=======
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+>>>>>>> 908c8a5 (fixed)
               <span class="badge {% if project.status == 'active' %}badge-doing{% else %}badge-todo{% endif %}">
                 {{ project.status }}
               </span>
               <span class="text-muted text-small">{{ project.members.count }} member(s)</span>
             </div>
+
           </a>
           {% endfor %}
+
         </div>
         {% else %}
+<<<<<<< HEAD
         <div style="text-align: center; padding: 32px; color: var(--text-muted)">
           <i class="fa-solid fa-folder-open" style="font-size: 36px; margin-bottom: 12px; display: block; opacity: 0.3;"></i>
           No projects yet. <a href="{% url 'project_create' %}" style="color: var(--accent)">Create one!</a>
+=======
+        <div style="text-align:center; padding:32px; color:var(--text-muted)">
+          <i class="fa-solid fa-folder-open" style="font-size:36px; margin-bottom:12px; display:block; opacity:0.3;"></i>
+          No projects yet.
+          <a href="{% url 'project_create' %}" style="color:var(--accent)">Create one!</a>
+>>>>>>> 908c8a5 (fixed)
         </div>
         {% endif %}
       </div>
@@ -103,7 +144,8 @@
         {% endif %}
       </div>
 
-      <div class="card-body" style="padding: 0">
+      <div class="card-body" style="padding:0">
+
         {% if my_cards %}
         <table class="table">
           <thead>
@@ -118,7 +160,9 @@
           <tbody>
             {% for card in my_cards %}
             <tr>
+
               <td>
+<<<<<<< HEAD
                 <a href="{% url 'card_detail' card.id %}" style="font-weight: 600">{{ card.title }}</a>
               </td>
               <td class="text-muted text-small">{{ card.list.board.project.name }}</td>
@@ -128,25 +172,62 @@
                 {% if card.deadline %}
                 <span class="{% if card.is_overdue %}text-danger{% else %}text-muted{% endif %}" style="font-size: 12px">
                   {% if card.is_overdue %}<i class="fa-solid fa-triangle-exclamation"></i>{% endif %} {{ card.deadline }}
+=======
+                <a href="{% url 'card_detail' card.id %}" style="font-weight:600">
+                  {{ card.title }}
+                </a>
+              </td>
+
+              <td class="text-muted text-small">
+                {{ card.list.board.project.name }}
+              </td>
+
+              <td>
+                <span class="badge badge-{{ card.priority }}">
+                  {{ card.priority }}
+                </span>
+              </td>
+
+              <td>
+                <span class="badge badge-{{ card.status }}">
+                  {{ card.status }}
+                </span>
+              </td>
+
+              <td>
+                {% if card.deadline %}
+                <span class="{% if card.is_overdue %}text-danger{% else %}text-muted{% endif %}" style="font-size:12px">
+                  {% if card.is_overdue %}
+                  <i class="fa-solid fa-triangle-exclamation"></i>
+                  {% endif %}
+                  {{ card.deadline }}
+>>>>>>> 908c8a5 (fixed)
                 </span>
                 {% else %}
                 <span class="text-muted text-small">—</span>
                 {% endif %}
               </td>
+
             </tr>
             {% endfor %}
           </tbody>
         </table>
         {% else %}
+<<<<<<< HEAD
         <div style="text-align: center; padding: 32px; color: var(--text-muted)">
           <i class="fa-solid fa-check-double" style="font-size: 36px; margin-bottom: 12px; display: block; opacity: 0.3;"></i>
+=======
+        <div style="text-align:center; padding:32px; color:var(--text-muted)">
+          <i class="fa-solid fa-check-double" style="font-size:36px; margin-bottom:12px; display:block; opacity:0.3;"></i>
+>>>>>>> 908c8a5 (fixed)
           No tasks assigned to you.
         </div>
         {% endif %}
+
       </div>
     </div>
-  </div>
 
+<<<<<<< HEAD
   <!-- RIGHT COLUMN -->
   <div style="display: flex; flex-direction: column; gap: 24px;">
     <!-- Chart Overview -->
@@ -158,13 +239,33 @@
         <canvas id="taskChart"></canvas>
       </div>
     </div>
+=======
+  </div>
 
-    <!-- Quick Actions -->
+  <!-- RIGHT -->
+  <div>
+>>>>>>> 908c8a5 (fixed)
+
+    <div class="card mt-4">
+      <div class="card-header">
+        <h4>Task Overview</h4>
+      </div>
+      <div class="card-body">
+        <canvas id="taskChart"></canvas>
+      </div>
+    </div>
+
     <div class="card">
       <div class="card-header">
         <div class="fw-700">Quick Actions</div>
       </div>
+<<<<<<< HEAD
       <div class="card-body" style="display: flex; flex-direction: column; gap: 8px">
+=======
+
+      <div class="card-body" style="display:flex; flex-direction:column; gap:8px">
+
+>>>>>>> 908c8a5 (fixed)
         <a href="{% url 'project_create' %}" class="btn btn-secondary">
           <i class="fa-solid fa-folder-plus"></i> New Project
         </a>
@@ -179,13 +280,16 @@
           <i class="fa-solid fa-chart-bar"></i> Admin Panel
         </a>
         {% endif %}
+
       </div>
     </div>
+
   </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
+<<<<<<< HEAD
   fetch("/api/v1/dashboard/", {
     credentials: "include",
   })
@@ -221,6 +325,33 @@
       });
     })
     .catch(err => console.error("Error loading chart data:", err));
+=======
+fetch("/api/v1/dashboard/", { credentials: "include" })
+.then(res => res.json())
+.then(data => {
+  const stats = data.stats;
+
+  const ctx = document.getElementById("taskChart").getContext("2d");
+
+  new Chart(ctx, {
+    type: "doughnut",
+    data: {
+      labels: ["Done", "Doing", "To Do", "Overdue"],
+      datasets: [{
+        data: [stats.done, stats.doing, stats.todo, stats.overdue],
+        backgroundColor: ["#22c55e", "#f59e0b", "#3b82f6", "#ef4444"],
+      }]
+    },
+    options: {
+      plugins: {
+        legend: {
+          labels: { color: "#fff" }
+        }
+      }
+    }
+  });
+});
+>>>>>>> 908c8a5 (fixed)
 </script>
 
 {% endblock %}

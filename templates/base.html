@@ -115,8 +115,18 @@
         >
           <i class="fa-solid fa-bars"></i>
         </button>
+
         <div class="topbar-title">{% block page_title %}{% endblock %}</div>
+
         <div class="topbar-actions">
+          <button
+            id="themeToggle"
+            class="btn btn-icon btn-secondary"
+            type="button"
+          >
+            <i class="fa-solid fa-moon" id="themeIcon"></i>
+          </button>
+
           <form action="{% url 'search' %}" method="get" class="search-bar">
             <i
               class="fa-solid fa-magnifying-glass"
@@ -129,13 +139,15 @@
               value="{{ request.GET.q }}"
             />
           </form>
+
           <a
             href="{% url 'notifications' %}"
             class="btn btn-icon btn-secondary"
             style="position: relative"
           >
             <i class="fa-solid fa-bell"></i>
-            {% if unread_count %}<span
+            {% if unread_count %}
+            <span
               style="
                 position: absolute;
                 top: 4px;
@@ -145,9 +157,10 @@
                 background: var(--red);
                 border-radius: 50%;
               "
-            ></span
-            >{% endif %}
+            ></span>
+            {% endif %}
           </a>
+
           {% block topbar_extra %}{% endblock %}
         </div>
       </div>
@@ -171,7 +184,7 @@
       function toggleSidebar() {
         document.getElementById("sidebar").classList.toggle("open");
       }
-      // Close sidebar on outside click (mobile)
+
       document.addEventListener("click", function (e) {
         const sidebar = document.getElementById("sidebar");
         if (window.innerWidth <= 768 && sidebar.classList.contains("open")) {
@@ -180,8 +193,34 @@
           }
         }
       });
+
+      const themeToggle = document.getElementById("themeToggle");
+      const themeIcon = document.getElementById("themeIcon");
+
+      function setTheme(theme) {
+        if (theme === "light") {
+          document.body.classList.add("light-mode");
+          themeIcon.classList.remove("fa-moon");
+          themeIcon.classList.add("fa-sun");
+        } else {
+          document.body.classList.remove("light-mode");
+          themeIcon.classList.remove("fa-sun");
+          themeIcon.classList.add("fa-moon");
+        }
+
+        localStorage.setItem("theme", theme);
+      }
+
+      // Load saved theme
+      setTheme(localStorage.getItem("theme") || "dark");
+
+      // Toggle
+      themeToggle.addEventListener("click", function () {
+        const isLight = document.body.classList.contains("light-mode");
+        setTheme(isLight ? "dark" : "light");
+      });
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     {% block extra_js %}{% endblock %}
   </body>
 </html>
