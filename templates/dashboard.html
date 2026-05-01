@@ -1,7 +1,6 @@
 {% extends 'base.html' %}
 
 {% block title %}Dashboard{% endblock %}
-
 {% block page_title %} Dashboard / ទំព័រដើម {% endblock %}
 
 {% block topbar_extra %}
@@ -12,7 +11,7 @@
 
 {% block content %}
 
-<!-- Stats Row -->
+<!-- Stats -->
 <div class="grid-4 mb-24">
   <div class="stat-card blue">
     <div class="stat-icon"><i class="fa-solid fa-folder"></i></div>
@@ -23,84 +22,66 @@
   <div class="stat-card green">
     <div class="stat-icon"><i class="fa-solid fa-folder-check"></i></div>
     <div class="stat-number">{{ completed_projects }}</div>
-    <div class="stat-label">Completed Projects</div>
+    <div class="stat-label">Completed</div>
   </div>
 
   <div class="stat-card yellow">
     <div class="stat-icon"><i class="fa-solid fa-spinner"></i></div>
     <div class="stat-number">{{ doing_tasks }}</div>
-    <div class="stat-label">In Progress / កំពុងដំណើរការ</div>
+    <div class="stat-label">Doing</div>
   </div>
 
   <div class="stat-card red">
     <div class="stat-icon"><i class="fa-solid fa-clock"></i></div>
     <div class="stat-number">{{ todo_tasks }}</div>
-    <div class="stat-label">To Do / ត្រូវធ្វើ</div>
+    <div class="stat-label">To Do</div>
   </div>
 </div>
 
-<div style="display: grid; grid-template-columns: 1fr 340px; gap: 20px; align-items: start;">
-<<<<<<< HEAD
-  <!-- LEFT COLUMN -->
-  <div>
-    <!-- Projects Card -->
-=======
+<div style="display:grid; grid-template-columns:1fr 340px; gap:20px;">
 
   <!-- LEFT -->
   <div>
 
     <!-- Projects -->
->>>>>>> 908c8a5 (fixed)
     <div class="card mb-24">
       <div class="card-header">
         <div>
-          <div class="fw-700">My Projects / គម្រោងរបស់ខ្ញុំ</div>
-          <div class="text-small text-muted">
-            {{ projects|length }} project(s)
-          </div>
+          <div class="fw-700">My Projects</div>
+          <div class="text-small text-muted">{{ projects|length }} project(s)</div>
         </div>
         <a href="{% url 'projects' %}" class="btn btn-secondary btn-sm">View All</a>
       </div>
 
       <div class="card-body">
         {% if projects %}
-        <div class="project-grid" style="grid-template-columns: repeat(auto-fill, minmax(260px, 1fr))">
-<<<<<<< HEAD
-=======
+        <div class="project-grid">
 
->>>>>>> 908c8a5 (fixed)
           {% for project in projects %}
           <a href="{% url 'project_detail' project.id %}" class="project-card">
 
             <div class="project-name">{{ project.name }}</div>
+
             <div class="project-desc">
               {{ project.description|truncatechars:60|default:"No description" }}
             </div>
 
-<<<<<<< HEAD
-            <div style="margin-bottom: 12px;">
-              <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted); margin-bottom: 6px;">
-=======
             <div>
-              <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--text-muted); margin-bottom:6px;">
->>>>>>> 908c8a5 (fixed)
-                <span>{{ project.done_cards }}/{{ project.total_cards }} tasks done</span>
+              <div style="display:flex; justify-content:space-between; font-size:12px;">
+                <span>{{ project.done_cards }}/{{ project.total_cards }}</span>
                 <span>{{ project.progress }}%</span>
               </div>
+
               <div class="progress-bar">
                 <div class="progress-fill" style="width:{{ project.progress }}%"></div>
               </div>
             </div>
 
-<<<<<<< HEAD
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-=======
-            <div style="display:flex; justify-content:space-between; align-items:center;">
->>>>>>> 908c8a5 (fixed)
-              <span class="badge {% if project.status == 'active' %}badge-doing{% else %}badge-todo{% endif %}">
+            <div style="display:flex; justify-content:space-between;">
+              <span class="badge badge-{{ project.status }}">
                 {{ project.status }}
               </span>
-              <span class="text-muted text-small">{{ project.members.count }} member(s)</span>
+              <span>{{ project.members.count }} members</span>
             </div>
 
           </a>
@@ -108,93 +89,43 @@
 
         </div>
         {% else %}
-<<<<<<< HEAD
-        <div style="text-align: center; padding: 32px; color: var(--text-muted)">
-          <i class="fa-solid fa-folder-open" style="font-size: 36px; margin-bottom: 12px; display: block; opacity: 0.3;"></i>
-          No projects yet. <a href="{% url 'project_create' %}" style="color: var(--accent)">Create one!</a>
-=======
-        <div style="text-align:center; padding:32px; color:var(--text-muted)">
-          <i class="fa-solid fa-folder-open" style="font-size:36px; margin-bottom:12px; display:block; opacity:0.3;"></i>
-          No projects yet.
-          <a href="{% url 'project_create' %}" style="color:var(--accent)">Create one!</a>
->>>>>>> 908c8a5 (fixed)
+        <div style="text-align:center; padding:30px;">
+          No projects yet
         </div>
         {% endif %}
       </div>
     </div>
 
-    <!-- Tasks Card -->
+    <!-- TASK TABLE -->
     <div class="card">
       <div class="card-header">
-        <div class="fw-700">My Tasks / ការងាររបស់ខ្ញុំ</div>
-        {% if overdue_cards %}
-        <span class="badge badge-overdue">
-          <i class="fa-solid fa-triangle-exclamation"></i> {{ overdue_cards|length }} overdue
-        </span>
-        {% endif %}
+        <div class="fw-700">My Tasks</div>
       </div>
 
-      <div class="card-body" style="padding:0">
-
+      <div class="card-body">
         {% if my_cards %}
         <table class="table">
           <thead>
             <tr>
               <th>Task</th>
               <th>Project</th>
-              <th>Priority</th>
               <th>Status</th>
               <th>Deadline</th>
             </tr>
           </thead>
+
           <tbody>
             {% for card in my_cards %}
             <tr>
-
-              <td>
-<<<<<<< HEAD
-                <a href="{% url 'card_detail' card.id %}" style="font-weight: 600">{{ card.title }}</a>
-              </td>
-              <td class="text-muted text-small">{{ card.list.board.project.name }}</td>
-              <td><span class="badge badge-{{ card.priority }}">{{ card.priority }}</span></td>
-              <td><span class="badge badge-{{ card.status }}">{{ card.status }}</span></td>
-              <td>
-                {% if card.deadline %}
-                <span class="{% if card.is_overdue %}text-danger{% else %}text-muted{% endif %}" style="font-size: 12px">
-                  {% if card.is_overdue %}<i class="fa-solid fa-triangle-exclamation"></i>{% endif %} {{ card.deadline }}
-=======
-                <a href="{% url 'card_detail' card.id %}" style="font-weight:600">
-                  {{ card.title }}
-                </a>
-              </td>
-
-              <td class="text-muted text-small">
-                {{ card.list.board.project.name }}
-              </td>
-
-              <td>
-                <span class="badge badge-{{ card.priority }}">
-                  {{ card.priority }}
-                </span>
-              </td>
-
-              <td>
-                <span class="badge badge-{{ card.status }}">
-                  {{ card.status }}
-                </span>
-              </td>
+              <td>{{ card.title }}</td>
+              <td>{{ card.list.board.project.name }}</td>
+              <td>{{ card.status }}</td>
 
               <td>
                 {% if card.deadline %}
-                <span class="{% if card.is_overdue %}text-danger{% else %}text-muted{% endif %}" style="font-size:12px">
-                  {% if card.is_overdue %}
-                  <i class="fa-solid fa-triangle-exclamation"></i>
-                  {% endif %}
                   {{ card.deadline }}
->>>>>>> 908c8a5 (fixed)
-                </span>
                 {% else %}
-                <span class="text-muted text-small">—</span>
+                  —
                 {% endif %}
               </td>
 
@@ -203,40 +134,17 @@
           </tbody>
         </table>
         {% else %}
-<<<<<<< HEAD
-        <div style="text-align: center; padding: 32px; color: var(--text-muted)">
-          <i class="fa-solid fa-check-double" style="font-size: 36px; margin-bottom: 12px; display: block; opacity: 0.3;"></i>
-=======
-        <div style="text-align:center; padding:32px; color:var(--text-muted)">
-          <i class="fa-solid fa-check-double" style="font-size:36px; margin-bottom:12px; display:block; opacity:0.3;"></i>
->>>>>>> 908c8a5 (fixed)
-          No tasks assigned to you.
-        </div>
+        <div>No tasks</div>
         {% endif %}
-
       </div>
     </div>
 
-<<<<<<< HEAD
-  <!-- RIGHT COLUMN -->
-  <div style="display: flex; flex-direction: column; gap: 24px;">
-    <!-- Chart Overview -->
-    <div class="card">
-      <div class="card-header">
-        <div class="fw-700">Task Overview</div>
-      </div>
-      <div class="card-body">
-        <canvas id="taskChart"></canvas>
-      </div>
-    </div>
-=======
   </div>
 
   <!-- RIGHT -->
   <div>
->>>>>>> 908c8a5 (fixed)
 
-    <div class="card mt-4">
+    <div class="card">
       <div class="card-header">
         <h4>Task Overview</h4>
       </div>
@@ -245,127 +153,28 @@
       </div>
     </div>
 
-    <div class="card">
-      <div class="card-header">
-        <div class="fw-700">Quick Actions</div>
-      </div>
-<<<<<<< HEAD
-      <div class="card-body" style="display: flex; flex-direction: column; gap: 8px">
-=======
-
-      <div class="card-body" style="display:flex; flex-direction:column; gap:8px">
-
->>>>>>> 908c8a5 (fixed)
-        <a href="{% url 'project_create' %}" class="btn btn-secondary">
-          <i class="fa-solid fa-folder-plus"></i> New Project
-        </a>
-        <a href="{% url 'projects' %}" class="btn btn-secondary">
-          <i class="fa-solid fa-folder-open"></i>  Open Board
-        </a>
-        <a href="{% url 'notifications' %}" class="btn btn-secondary">
-          <i class="fa-solid fa-bell"></i> Notifications
-        </a>
-        {% if user.is_staff or user.is_superuser %}
-        <a href="/admin/" class="btn btn-secondary">
-          <i class="fa-solid fa-chart-bar"></i> Admin Panel
-        </a>
-        {% endif %}
-
-      </div>
-    </div>
-
   </div>
+
 </div>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-<<<<<<< HEAD
-<<<<<<< HEAD
-  fetch("/api/v1/dashboard/", {
-    credentials: "include",
-  })
-    .then((res) => res.json())
-    .then((data) => {
-      const stats = data.stats;
-      const ctx = document.getElementById("taskChart").getContext("2d");
-
-      new Chart(ctx, {
-        type: "doughnut",
-        data: {
-          labels: ["Done", "Doing", "To Do", "Overdue"],
-          datasets: [
-            {
-              data: [stats.done, stats.doing, stats.todo, stats.overdue],
-              backgroundColor: ["#22c55e", "#f59e0b", "#3b82f6", "#ef4444"],
-              borderWidth: 0
-            },
-          ],
-        },
-        options: {
-          plugins: {
-            legend: {
-              position: 'bottom',
-              labels: {
-                color: "#64748b",
-                padding: 20
-              },
-            },
-          },
-          cutout: '70%'
-        },
-      });
-    })
-    .catch(err => console.error("Error loading chart data:", err));
-=======
-=======
-let taskChart = null;
-
-function getChartTextColor() {
-  return document.body.classList.contains("light-mode") ? "#0f172a" : "#ffffff";
-}
-
-function updateChartTheme() {
-  if (!taskChart) return;
-
-  taskChart.options.plugins.legend.labels.color = getChartTextColor();
-  taskChart.update();
-}
-
->>>>>>> 254dbb2 (fixed)
 fetch("/api/v1/dashboard/", { credentials: "include" })
   .then(res => res.json())
   .then(data => {
     const stats = data.stats;
 
-    const ctx = document.getElementById("taskChart").getContext("2d");
-
-    taskChart = new Chart(ctx, {
+    new Chart(document.getElementById("taskChart"), {
       type: "doughnut",
       data: {
         labels: ["Done", "Doing", "To Do", "Overdue"],
         datasets: [{
           data: [stats.done, stats.doing, stats.todo, stats.overdue],
-          backgroundColor: ["#22c55e", "#f59e0b", "#3b82f6", "#ef4444"],
+          backgroundColor: ["#22c55e","#f59e0b","#3b82f6","#ef4444"]
         }]
-      },
-      options: {
-        plugins: {
-          legend: {
-            labels: {
-              color: getChartTextColor()
-            }
-          }
-        }
       }
     });
   });
-
-/* Run this after your dark/light button click */
-document.addEventListener("click", function (e) {
-  if (e.target.closest("#themeToggle")) {
-    setTimeout(updateChartTheme, 50);
-  }
-});
->>>>>>> 908c8a5 (fixed)
 </script>
 
 {% endblock %}
