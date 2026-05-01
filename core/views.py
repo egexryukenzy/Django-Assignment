@@ -39,16 +39,18 @@ def login_view(request):
         messages.error(request, "Invalid username or password")
     return render(request, "auth/login.html")
 
-
 def register_view(request):
     if request.user.is_authenticated:
         return redirect("dashboard")
+
     if request.method == "POST":
         username = request.POST.get("username")
         email = request.POST.get("email")
         password = request.POST.get("password")
         full_name = request.POST.get("full_name", "")
         role = request.POST.get("role", "member")
+        avatar = request.FILES.get("avatar")
+
         if User.objects.filter(username=username).exists():
             messages.error(request, "Username already taken")
         elif User.objects.filter(email=email).exists():
@@ -64,9 +66,14 @@ def register_view(request):
                 else "",
                 role=role,
             )
+            if avatar:
+                user.avatar = avatar
+                user.save()
+
             login(request, user)
             messages.success(request, "Account created successfully!")
             return redirect("dashboard")
+
     return render(request, "auth/register.html")
 
 

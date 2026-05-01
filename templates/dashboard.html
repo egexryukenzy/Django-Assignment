@@ -1,18 +1,8 @@
 {% extends 'base.html' %}
 
-<<<<<<< HEAD
 {% block title %}Dashboard{% endblock %}
 
 {% block page_title %} Dashboard / ទំព័រដើម {% endblock %}
-=======
-{% block title %}
-Dashboard
-{% endblock %}
-
-{% block page_title %}
-Dashboard / ទំព័រដើម
-{% endblock %}
->>>>>>> 908c8a5 (fixed)
 
 {% block topbar_extra %}
 <a href="{% url 'project_create' %}" class="btn btn-primary">
@@ -270,7 +260,7 @@ Dashboard / ទំព័រដើម
           <i class="fa-solid fa-folder-plus"></i> New Project
         </a>
         <a href="{% url 'projects' %}" class="btn btn-secondary">
-          <i class="fa-solid fa-kanban"></i> Open Board
+          <i class="fa-solid fa-folder-open"></i>  Open Board
         </a>
         <a href="{% url 'notifications' %}" class="btn btn-secondary">
           <i class="fa-solid fa-bell"></i> Notifications
@@ -286,9 +276,9 @@ Dashboard / ទំព័រដើម
 
   </div>
 </div>
-
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
+<<<<<<< HEAD
 <<<<<<< HEAD
   fetch("/api/v1/dashboard/", {
     credentials: "include",
@@ -326,30 +316,54 @@ Dashboard / ទំព័រដើម
     })
     .catch(err => console.error("Error loading chart data:", err));
 =======
+=======
+let taskChart = null;
+
+function getChartTextColor() {
+  return document.body.classList.contains("light-mode") ? "#0f172a" : "#ffffff";
+}
+
+function updateChartTheme() {
+  if (!taskChart) return;
+
+  taskChart.options.plugins.legend.labels.color = getChartTextColor();
+  taskChart.update();
+}
+
+>>>>>>> 254dbb2 (fixed)
 fetch("/api/v1/dashboard/", { credentials: "include" })
-.then(res => res.json())
-.then(data => {
-  const stats = data.stats;
+  .then(res => res.json())
+  .then(data => {
+    const stats = data.stats;
 
-  const ctx = document.getElementById("taskChart").getContext("2d");
+    const ctx = document.getElementById("taskChart").getContext("2d");
 
-  new Chart(ctx, {
-    type: "doughnut",
-    data: {
-      labels: ["Done", "Doing", "To Do", "Overdue"],
-      datasets: [{
-        data: [stats.done, stats.doing, stats.todo, stats.overdue],
-        backgroundColor: ["#22c55e", "#f59e0b", "#3b82f6", "#ef4444"],
-      }]
-    },
-    options: {
-      plugins: {
-        legend: {
-          labels: { color: "#fff" }
+    taskChart = new Chart(ctx, {
+      type: "doughnut",
+      data: {
+        labels: ["Done", "Doing", "To Do", "Overdue"],
+        datasets: [{
+          data: [stats.done, stats.doing, stats.todo, stats.overdue],
+          backgroundColor: ["#22c55e", "#f59e0b", "#3b82f6", "#ef4444"],
+        }]
+      },
+      options: {
+        plugins: {
+          legend: {
+            labels: {
+              color: getChartTextColor()
+            }
+          }
         }
       }
-    }
+    });
   });
+
+/* Run this after your dark/light button click */
+document.addEventListener("click", function (e) {
+  if (e.target.closest("#themeToggle")) {
+    setTimeout(updateChartTheme, 50);
+  }
 });
 >>>>>>> 908c8a5 (fixed)
 </script>

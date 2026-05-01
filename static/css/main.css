@@ -562,3 +562,90 @@ body.light-mode .quick-actions .btn,
 body.light-mode .card .btn-secondary {
   color: var(--text-primary);
 }
+/* ===============================
+   FORCE LIGHT MODE TEXT FIX
+================================ */
+
+body.light-mode {
+  background: #f4f6fb !important;
+  color: #0f172a !important;
+
+  --text-primary: #0f172a !important;
+  --text-muted: #334155 !important;
+  --text-faint: #475569 !important;
+
+  --bs-body-color: #0f172a !important;
+  --bs-secondary-color: #334155 !important;
+}
+
+/* Fix all normal text */
+body.light-mode,
+body.light-mode * {
+  color: #0f172a;
+}
+
+/* Fix muted/light text */
+body.light-mode .text-muted,
+body.light-mode .stat-label,
+body.light-mode .project-desc,
+body.light-mode .user-role,
+body.light-mode .logo-sub,
+body.light-mode .nav-section {
+  color: #334155 !important;
+}
+
+/* Fix cards */
+body.light-mode .card,
+body.light-mode .card-header,
+body.light-mode .card-body,
+body.light-mode .stat-card,
+body.light-mode .project-card {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #d1d5db !important;
+}
+
+/* Fix headings */
+body.light-mode h1,
+body.light-mode h2,
+body.light-mode h3,
+body.light-mode h4,
+body.light-mode h5,
+body.light-mode h6,
+body.light-mode .fw-700,
+body.light-mode .topbar-title,
+body.light-mode .stat-number {
+  color: #020617 !important;
+}
+
+/* Fix buttons */
+body.light-mode .btn,
+body.light-mode .btn i,
+body.light-mode .btn-secondary,
+body.light-mode .btn-secondary i {
+  color: #020617 !important;
+}
+
+body.light-mode .btn-secondary {
+  background: #e2e8f0 !important;
+  border: 1px solid #cbd5e1 !important;
+}
+
+body.light-mode .btn-secondary:hover {
+  background: #cbd5e1 !important;
+}
+
+/* Fix search input */
+body.light-mode input,
+body.light-mode textarea,
+body.light-mode select,
+body.light-mode .form-control,
+body.light-mode .search-bar input {
+  color: #020617 !important;
+}
+
+/* Keep primary button white text */
+body.light-mode .btn-primary,
+body.light-mode .btn-primary i {
+  color: #ffffff !important;
+}
