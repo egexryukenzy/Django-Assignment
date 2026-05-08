@@ -15,6 +15,19 @@
   height: 60px; border: 2px dashed var(--accent); border-radius: 8px;
   background: rgba(79,110,247,.05); margin-bottom: 8px;
 }
+.project-submit-fixed {
+  position: fixed;
+  right: 28px;
+  bottom: 24px;
+  z-index: 20;
+  display: flex;
+  justify-content: flex-end;
+}
+.project-submit-fixed .btn { box-shadow: 0 10px 24px rgba(15,23,42,.18); }
+@media (max-width: 720px) {
+  .project-submit-fixed { left: 16px; right: 16px; bottom: 16px; }
+  .project-submit-fixed .btn { width: 100%; justify-content: center; }
+}
 </style>
 {% endblock %}
 
@@ -42,7 +55,7 @@
   {% for l in lists %}
   <div style="display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--text-muted)">
     <span style="width:8px;height:8px;border-radius:50%;background:{% if 'Do' in l.title and 'ing' in l.title %}var(--yellow){% elif 'Done' in l.title %}var(--green){% else %}var(--text-faint){% endif %}"></span>
-    {{ l.title }}: <strong style="color:var(--text-primary)">{{ l.cards.count }}</strong>
+    {{ l.title }}: <strong style="color:var(--text-primary)">{{ l.visible_cards|length }}</strong>
   </div>
   {% endfor %}
   <div style="margin-left:auto;display:flex;gap:8px">
@@ -60,19 +73,21 @@
       <div style="display:flex;align-items:center;gap:8px">
         <span style="width:10px;height:10px;border-radius:50%;background:{% if 'Doing' in list.title %}var(--yellow){% elif 'Done' in list.title %}var(--green){% else %}var(--text-faint){% endif %}"></span>
         <span class="kanban-col-title">{{ list.title }}</span>
-        <span class="col-count">{{ list.cards.count }}</span>
+        <span class="col-count">{{ list.visible_cards|length }}</span>
       </div>
+      {% if list.can_add_card %}
       <button class="btn btn-icon btn-secondary" style="width:28px;height:28px;padding:0;font-size:12px" onclick="toggleAddCard({{ list.id }})">
         <i class="fa-solid fa-plus"></i>
       </button>
+      {% endif %}
     </div>
 
     <!-- Cards drop zone -->
-    <div class="kanban-cards" id="cards-{{ list.id }}" ondragover="dragOver(event)" ondrop="drop(event, {{ list.id }})">
-      {% for card in list.cards.all %}
-      <div class="kanban-card" id="card-{{ card.id }}" draggable="true"
+    <div class="kanban-cards" id="cards-{{ list.id }}"{% if can_lead %} ondragover="dragOver(event)" ondrop="drop(event, {{ list.id }})"{% endif %}>
+      {% for card in list.visible_cards %}
+      <div class="kanban-card" id="card-{{ card.id }}"{% if can_lead %} draggable="true"
            ondragstart="dragStart(event, {{ card.id }})"
-           ondragend="dragEnd(event)"
+           ondragend="dragEnd(event)"{% endif %}
            onclick="window.location='{% url 'card_detail' card.id %}'">
         <div class="card-priority-bar {{ card.priority }}"></div>
         <div class="kanban-card-title">{{ card.title }}</div>
@@ -106,6 +121,7 @@
       {% endfor %}
     </div>
 
+    {% if list.can_add_card %}
     <!-- Add Card Form (inline) -->
     <div class="add-card-form" id="addCardForm-{{ list.id }}">
       <form method="post" action="{% url 'card_create' list.id %}">
@@ -120,11 +136,11 @@
           </select>
           <input type="date" name="deadline" class="form-control" style="font-size:12px">
         </div>
-        <div style="display:flex;gap:6px">
-          <button type="submit" class="btn btn-primary btn-sm" style="flex:1;justify-content:center">
-            <i class="fa-solid fa-plus"></i> Add Card
-          </button>
+        <div style="display:flex;gap:6px;justify-content:flex-end">
           <button type="button" class="btn btn-secondary btn-sm" onclick="toggleAddCard({{ list.id }})">✕</button>
+          <button type="submit" class="btn btn-primary btn-sm">
+            <i class="fa-solid fa-plus"></i> Submit
+          </button>
         </div>
       </form>
     </div>
@@ -132,9 +148,11 @@
     <button class="add-card-btn" onclick="toggleAddCard({{ list.id }})">
       <i class="fa-solid fa-plus"></i> Add card / បន្ថែមការងារ
     </button>
+    {% endif %}
   </div>
   {% endfor %}
 
+  {% if can_lead %}
   <!-- Add List -->
   <div style="flex-shrink:0;width:280px">
     <div id="addListToggle">
@@ -153,7 +171,17 @@
       </form>
     </div>
   </div>
+  {% endif %}
 </div>
+
+{% if can_lead and project.status != "completed" %}
+<form method="post" action="{% url 'project_complete' project.id board.id %}" class="project-submit-fixed">
+  {% csrf_token %}
+  <button type="submit" class="btn btn-primary" onclick="return confirm('Submit and mark this project completed?')">
+    <i class="fa-solid fa-check"></i> Submit Project
+  </button>
+</form>
+{% endif %}
 
 <!-- Filter Modal -->
 <div class="modal-overlay" id="filterModal">

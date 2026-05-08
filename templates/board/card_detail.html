@@ -28,6 +28,7 @@
             Created by {{ card.created_by.username }} · {{ card.created_at|date:"M d, Y H:i" }}
           </div>
         </div>
+        {% if can_lead %}
         <div style="display:flex;gap:8px">
           <button class="btn btn-secondary btn-sm" onclick="showModal('editModal')">
             <i class="fa-solid fa-pen"></i> Edit
@@ -36,6 +37,7 @@
             <i class="fa-solid fa-trash"></i>
           </a>
         </div>
+        {% endif %}
       </div>
       <div class="card-body">
         {% if card.description %}
@@ -121,6 +123,25 @@
         </form>
       </div>
     </div>
+
+    {% if can_choose_work or can_mark_done %}
+    <div style="display:flex;justify-content:flex-end;margin-top:16px">
+      {% if can_choose_work %}
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="choose_work">
+        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-play"></i> Choose</button>
+      </form>
+      {% endif %}
+      {% if can_mark_done %}
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="mark_done">
+        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check"></i> Done</button>
+      </form>
+      {% endif %}
+    </div>
+    {% endif %}
   </div>
 
   <!-- Right Sidebar -->
@@ -157,7 +178,7 @@
     <div class="card">
       <div class="card-header">
         <div class="fw-700">Assignees / អ្នករទទួលខុសត្រូវ</div>
-        <button class="btn btn-secondary btn-sm" onclick="showModal('assignModal')"><i class="fa-solid fa-user-plus"></i></button>
+        {% if can_lead %}<button class="btn btn-secondary btn-sm" onclick="showModal('assignModal')"><i class="fa-solid fa-user-plus"></i></button>{% endif %}
       </div>
       <div class="card-body" style="padding:8px 0">
         {% for m in members %}
@@ -167,12 +188,14 @@
             {% if m.user.avatar %}<img src="{{ m.user.avatar.url }}" alt="">{% else %}{{ m.user.username|first|upper }}{% endif %}
           </div>
           <div style="flex:1;font-size:13px;font-weight:500">{{ m.user.get_full_name|default:m.user.username }}</div>
+          {% if can_lead %}
           <form method="post">
             {% csrf_token %}
             <input type="hidden" name="action" value="unassign">
             <input type="hidden" name="user_id" value="{{ m.user.id }}">
             <button type="submit" style="background:none;border:none;color:var(--text-faint);cursor:pointer;font-size:12px">×</button>
           </form>
+          {% endif %}
         </div>
         {% endif %}
         {% empty %}
@@ -185,7 +208,7 @@
     <div class="card">
       <div class="card-header">
         <div class="fw-700">Labels / ស្លាក</div>
-        <button class="btn btn-secondary btn-sm" onclick="showModal('labelModal')"><i class="fa-solid fa-tag"></i></button>
+        {% if can_lead %}<button class="btn btn-secondary btn-sm" onclick="showModal('labelModal')"><i class="fa-solid fa-tag"></i></button>{% endif %}
       </div>
       <div class="card-body" style="display:flex;flex-wrap:wrap;gap:6px">
         {% for label in card.labels.all %}
@@ -198,6 +221,7 @@
   </div>
 </div>
 
+{% if can_lead %}
 <!-- Edit Card Modal -->
 <div class="modal-overlay" id="editModal">
   <div class="modal-box" style="max-width:560px">
@@ -309,6 +333,7 @@
     </div>
   </div>
 </div>
+{% endif %}
 
 {% endblock %}
 {% block extra_js %}

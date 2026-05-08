@@ -3,9 +3,8 @@ from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
-from django.db.models import Q, Count
-from django.utils import timezone
-from django.views.decorators.http import require_POST, require_http_methods
+from django.db.models import Prefetch, Q
+from django.views.decorators.http import require_POST
 import json
 
 from .models import (
@@ -21,6 +20,61 @@ from .models import (
     Notification,
     CardAssignment,
 )
+
+
+def is_project_leader(user, project):
+    if not user.is_authenticated:
+        return False
+    return (
+        user.is_admin
+        or project.owner_id == user.id
+        or ProjectMember.objects.filter(project=project, user=user, role="owner").exists()
+    )
+
+
+def can_access_project(user, project):
+    if not user.is_authenticated:
+        return False
+    return (
+        user.is_admin
+        or project.owner_id == user.id
+        or ProjectMember.objects.filter(project=project, user=user).exists()
+    )
+
+
+def list_status(lst):
+    title = lst.title.lower()
+    if title.startswith("doing"):
+        return "doing"
+    if title.startswith("done"):
+        return "done"
+    if title.startswith("to do") or title.startswith("todo"):
+        return "todo"
+    return None
+
+
+def get_status_list(board, status):
+    prefixes = {
+        "todo": ("to do", "todo"),
+        "doing": ("doing",),
+        "done": ("done",),
+    }[status]
+    for lst in board.lists.all():
+        title = lst.title.lower()
+        if any(title.startswith(prefix) for prefix in prefixes):
+            return lst
+    return None
+
+
+def move_card_to_status(card, status):
+    target_list = get_status_list(card.list.board, status)
+    if not target_list:
+        return False
+    card.list = target_list
+    card.status = status
+    card.position = target_list.cards.count()
+    card.save()
+    return True
 
 
 # ─── AUTH ─────────────────────────────────────────────────────────────────────
@@ -119,6 +173,7 @@ def dashboard(request):
     my_cards = (
         cards.filter(assignees=user).exclude(status="done").order_by("deadline")[:5]
     )
+    completed_cards = cards.filter(assignees=user, status="done").order_by("-updated_at")[:5]
 
     # ─── OVERDUE ─────────────────────────────
     overdue_cards = [c for c in my_cards if c.is_overdue]
@@ -140,6 +195,7 @@ def dashboard(request):
         "total_projects": total_projects,
         # Cards
         "my_cards": my_cards,
+        "completed_cards": completed_cards,
         "overdue_cards": overdue_cards,
         # Notifications
         "notifications": notifications,
@@ -205,12 +261,7 @@ def project_create(request):
 @login_required
 def project_detail(request, project_id):
     project = get_object_or_404(Project, id=project_id)
-    can_access = (
-        request.user.is_admin
-        or project.owner == request.user
-        or ProjectMember.objects.filter(project=project, user=request.user).exists()
-    )
-    if not can_access:
+    if not can_access_project(request.user, project):
         messages.error(request, "Access denied")
         return redirect("projects")
 
@@ -218,15 +269,16 @@ def project_detail(request, project_id):
     boards = project.boards.all()
     member_user_ids = members.values_list("user_id", flat=True)
     all_users = User.objects.filter(is_active=True).exclude(id__in=member_user_ids)
+    can_lead = is_project_leader(request.user, project)
     context = {
         "project": project,
         "members": members,
         "boards": boards,
         "all_users": all_users,
+        "can_lead": can_lead,
         "unread_count": request.user.notifications.filter(is_read=False).count(),
     }
     return render(request, "projects/detail.html", context)
-
 
 @login_required
 def project_edit(request, project_id):
@@ -268,8 +320,14 @@ def project_delete(request, project_id):
 @require_POST
 def project_add_member(request, project_id):
     project = get_object_or_404(Project, id=project_id)
+    if not is_project_leader(request.user, project):
+        messages.error(request, "Permission denied")
+        return redirect("project_detail", project_id=project_id)
+
     user_id = request.POST.get("user_id")
     role = request.POST.get("role", "member")
+    if role == "owner":
+        role = "member"
     try:
         user = User.objects.get(id=user_id)
         ProjectMember.objects.get_or_create(
@@ -286,31 +344,37 @@ def project_add_member(request, project_id):
         messages.error(request, "User not found")
     return redirect("project_detail", project_id=project_id)
 
-
 @login_required
 def project_remove_member(request, project_id, user_id):
     project = get_object_or_404(Project, id=project_id)
+    if not is_project_leader(request.user, project):
+        messages.error(request, "Permission denied")
+        return redirect("project_detail", project_id=project_id)
+    if user_id == project.owner_id:
+        messages.error(request, "Project owner cannot be removed.")
+        return redirect("project_detail", project_id=project_id)
     ProjectMember.objects.filter(project=project, user_id=user_id).delete()
     messages.success(request, "Member removed.")
     return redirect("project_detail", project_id=project_id)
-
-
-# ─── BOARD / KANBAN ───────────────────────────────────────────────────────────
-
 
 @login_required
 def board_view(request, project_id, board_id):
     project = get_object_or_404(Project, id=project_id)
     board = get_object_or_404(Board, id=board_id, project=project)
-    can_access = (
-        request.user.is_admin
-        or project.owner == request.user
-        or ProjectMember.objects.filter(project=project, user=request.user).exists()
-    )
-    if not can_access:
+    if not can_access_project(request.user, project):
         return redirect("projects")
 
-    lists = board.lists.prefetch_related("cards__assignees", "cards__labels").all()
+    can_lead = is_project_leader(request.user, project)
+    visible_cards = Card.objects.prefetch_related("assignees", "labels")
+    if not can_lead:
+        visible_cards = visible_cards.filter(Q(assignees=request.user) | Q(status="todo")).distinct()
+    lists = list(
+        board.lists.prefetch_related(
+            Prefetch("cards", queryset=visible_cards, to_attr="visible_cards")
+        ).all()
+    )
+    for lst in lists:
+        lst.can_add_card = can_lead and list_status(lst) == "todo"
     members = ProjectMember.objects.filter(project=project).select_related("user")
     labels = project.labels.all()
     all_boards = project.boards.all()
@@ -322,62 +386,83 @@ def board_view(request, project_id, board_id):
         "members": members,
         "labels": labels,
         "all_boards": all_boards,
+        "can_lead": can_lead,
         "unread_count": request.user.notifications.filter(is_read=False).count(),
     }
     return render(request, "board/kanban.html", context)
-
 
 @login_required
 @require_POST
 def board_create(request, project_id):
     project = get_object_or_404(Project, id=project_id)
+    if not is_project_leader(request.user, project):
+        messages.error(request, "Permission denied")
+        return redirect("project_detail", project_id=project_id)
     name = request.POST.get("name", "New Board")
     board = Board.objects.create(
         project=project, name=name, position=project.boards.count()
     )
-    List.objects.create(board=board, title="To Do / ត្រូវធ្វើ", position=0)
-    List.objects.create(board=board, title="Doing / កំពុងធ្វើ", position=1)
-    List.objects.create(board=board, title="Done / បានធ្វើ", position=2)
+    List.objects.create(board=board, title="To Do", position=0)
+    List.objects.create(board=board, title="Doing", position=1)
+    List.objects.create(board=board, title="Done", position=2)
     return redirect("board", project_id=project_id, board_id=board.id)
 
+@login_required
+@require_POST
+def project_complete(request, project_id, board_id):
+    project = get_object_or_404(Project, id=project_id)
+    board = get_object_or_404(Board, id=board_id, project=project)
+    if not is_project_leader(request.user, project):
+        messages.error(request, "Permission denied")
+        return redirect("board", project_id=project.id, board_id=board.id)
+    project.status = "completed"
+    project.save(update_fields=["status", "updated_at"])
+    messages.success(request, f'Project "{project.name}" completed!')
+    return redirect("dashboard")
 
 @login_required
 @require_POST
 def list_create(request, board_id):
     board = get_object_or_404(Board, id=board_id)
+    if not is_project_leader(request.user, board.project):
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return JsonResponse({"ok": False, "error": "Permission denied"}, status=403)
+        messages.error(request, "Permission denied")
+        return redirect("board", project_id=board.project.id, board_id=board.id)
     title = request.POST.get("title", "New List")
     lst = List.objects.create(board=board, title=title, position=board.lists.count())
     if request.headers.get("X-Requested-With") == "XMLHttpRequest":
         return JsonResponse({"id": lst.id, "title": lst.title})
     return redirect("board", project_id=board.project.id, board_id=board.id)
 
-
-# ─── CARDS ────────────────────────────────────────────────────────────────────
-
-
 @login_required
 @require_POST
 def card_create(request, list_id):
     lst = get_object_or_404(List, id=list_id)
-    title = request.POST.get("title", "")
+    project = lst.board.project
+    if not is_project_leader(request.user, project):
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return JsonResponse({"ok": False, "error": "Permission denied"}, status=403)
+        messages.error(request, "Permission denied")
+        return redirect("board", project_id=project.id, board_id=lst.board.id)
+    if list_status(lst) != "todo":
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return JsonResponse({"ok": False, "error": "Cards can only be added to To Do"}, status=400)
+        messages.error(request, "Cards can only be added to To Do.")
+        return redirect("board", project_id=project.id, board_id=lst.board.id)
+
+    title = request.POST.get("title", "").strip()
     priority = request.POST.get("priority", "medium")
     deadline = request.POST.get("deadline") or None
-    status_map = {
-        "To Do / ត្រូវធ្វើ": "todo",
-        "Doing / កំពុងធ្វើ": "doing",
-        "Done / បានធ្វើ": "done",
-    }
-    status = status_map.get(lst.title, "todo")
     card = Card.objects.create(
         list=lst,
         created_by=request.user,
         title=title,
         priority=priority,
         deadline=deadline,
-        status=status,
+        status="todo",
         position=lst.cards.count(),
     )
-    CardAssignment.objects.get_or_create(card=card, user=request.user)
     if request.headers.get("X-Requested-With") == "XMLHttpRequest":
         return JsonResponse(
             {
@@ -389,13 +474,19 @@ def card_create(request, list_id):
                 "is_overdue": card.is_overdue,
             }
         )
-    return redirect("board", project_id=lst.board.project.id, board_id=lst.board.id)
-
+    return redirect("board", project_id=project.id, board_id=lst.board.id)
 
 @login_required
 def card_detail(request, card_id):
     card = get_object_or_404(Card, id=card_id)
     project = card.list.board.project
+    can_lead = is_project_leader(request.user, project)
+    is_assigned = CardAssignment.objects.filter(card=card, user=request.user).exists()
+    can_choose_open_work = card.status == "todo" and can_access_project(request.user, project)
+    if not can_access_project(request.user, project) or (not can_lead and not is_assigned and not can_choose_open_work):
+        messages.error(request, "Access denied")
+        return redirect("projects")
+
     members = ProjectMember.objects.filter(project=project).select_related("user")
     labels = project.labels.all()
     comments = card.comments.select_related("user").all()
@@ -407,26 +498,35 @@ def card_detail(request, card_id):
     if request.method == "POST":
         action = request.POST.get("action")
         if action == "edit":
+            if not can_lead:
+                messages.error(request, "Permission denied")
+                return redirect("card_detail", card_id=card.id)
             card.title = request.POST.get("title", card.title)
             card.description = request.POST.get("description", card.description)
             card.priority = request.POST.get("priority", card.priority)
-            card.status = request.POST.get("status", card.status)
+            next_status = request.POST.get("status", card.status)
             deadline = request.POST.get("deadline")
             card.deadline = deadline if deadline else None
+            if next_status in dict(Card.STATUS_CHOICES):
+                card.status = next_status
             card.save()
-            # Update list based on status
-            board = card.list.board
-            status_to_title = {
-                "todo": "To Do / ត្រូវធ្វើ",
-                "doing": "Doing / កំពុងធ្វើ",
-                "done": "Done / បានធ្វើ",
-            }
-            target_title = status_to_title.get(card.status)
-            target_list = board.lists.filter(title=target_title).first()
-            if target_list:
-                card.list = target_list
-                card.save()
+            move_card_to_status(card, card.status)
             messages.success(request, "Card updated!")
+        elif action == "choose_work":
+            if can_choose_open_work:
+                CardAssignment.objects.get_or_create(card=card, user=request.user)
+                move_card_to_status(card, "doing")
+                messages.success(request, "Task moved to Doing.")
+                return redirect("board", project_id=project.id, board_id=card.list.board.id)
+            else:
+                messages.error(request, "You cannot choose this task.")
+        elif action == "mark_done":
+            if is_assigned and card.status == "doing":
+                move_card_to_status(card, "done")
+                messages.success(request, "Task marked done.")
+                return redirect("board", project_id=project.id, board_id=card.list.board.id)
+            else:
+                messages.error(request, "You cannot mark this task done.")
         elif action == "comment":
             content = request.POST.get("content", "").strip()
             if content:
@@ -439,20 +539,29 @@ def card_detail(request, card_id):
                         link=f"/cards/{card.id}/",
                     )
         elif action == "assign":
+            if not can_lead:
+                messages.error(request, "Permission denied")
+                return redirect("card_detail", card_id=card.id)
             user_id = request.POST.get("user_id")
             try:
                 u = User.objects.get(id=user_id)
-                CardAssignment.objects.get_or_create(card=card, user=u)
-                Notification.objects.create(
-                    user=u,
-                    type="assigned",
-                    message=f'You were assigned to task "{card.title}"',
-                    link=f"/cards/{card.id}/",
-                )
-                messages.success(request, f"{u.username} assigned!")
+                if not ProjectMember.objects.filter(project=project, user=u).exists():
+                    messages.error(request, "User must be a project member first.")
+                else:
+                    CardAssignment.objects.get_or_create(card=card, user=u)
+                    Notification.objects.create(
+                        user=u,
+                        type="assigned",
+                        message=f'You were assigned to task "{card.title}"',
+                        link=f"/cards/{card.id}/",
+                    )
+                    messages.success(request, f"{u.username} assigned!")
             except User.DoesNotExist:
                 pass
         elif action == "unassign":
+            if not can_lead:
+                messages.error(request, "Permission denied")
+                return redirect("card_detail", card_id=card.id)
             user_id = request.POST.get("user_id")
             CardAssignment.objects.filter(card=card, user_id=user_id).delete()
         elif action == "attach":
@@ -463,6 +572,9 @@ def card_detail(request, card_id):
                 )
                 messages.success(request, "File attached!")
         elif action == "label":
+            if not can_lead:
+                messages.error(request, "Permission denied")
+                return redirect("card_detail", card_id=card.id)
             label_ids = request.POST.getlist("label_ids")
             card.labels.set(label_ids)
         return redirect("card_detail", card_id=card.id)
@@ -475,20 +587,26 @@ def card_detail(request, card_id):
         "comments": comments,
         "attachments": attachments,
         "assigned_ids": list(assigned_ids),
+        "can_lead": can_lead,
+        "is_assigned": is_assigned,
+        "can_choose_work": can_choose_open_work,
+        "can_mark_done": is_assigned and card.status == "doing",
         "unread_count": request.user.notifications.filter(is_read=False).count(),
     }
     return render(request, "board/card_detail.html", context)
-
 
 @login_required
 def card_delete(request, card_id):
     card = get_object_or_404(Card, id=card_id)
     board_id = card.list.board.id
-    project_id = card.list.board.project.id
+    project = card.list.board.project
+    if not is_project_leader(request.user, project):
+        messages.error(request, "Permission denied")
+        return redirect("card_detail", card_id=card.id)
+    project_id = project.id
     card.delete()
     messages.success(request, "Card deleted.")
     return redirect("board", project_id=project_id, board_id=board_id)
-
 
 @login_required
 @require_POST
@@ -501,20 +619,19 @@ def card_move(request):
     try:
         card = Card.objects.get(id=card_id)
         lst = List.objects.get(id=list_id)
+        if lst.board_id != card.list.board_id:
+            return JsonResponse({"ok": False, "error": "Invalid list"}, status=400)
+        if not is_project_leader(request.user, card.list.board.project):
+            return JsonResponse({"ok": False, "error": "Permission denied"}, status=403)
         card.list = lst
         card.position = position
-        # Update status based on list title
-        status_map = {
-            "To Do / ត្រូវធ្វើ": "todo",
-            "Doing / កំពុងធ្វើ": "doing",
-            "Done / បានធ្វើ": "done",
-        }
-        card.status = status_map.get(lst.title, card.status)
+        status = list_status(lst)
+        if status:
+            card.status = status
         card.save()
         return JsonResponse({"ok": True, "status": card.status})
     except (Card.DoesNotExist, List.DoesNotExist):
         return JsonResponse({"ok": False}, status=404)
-
 
 @login_required
 def comment_delete(request, comment_id):
@@ -731,12 +848,14 @@ def admin_reports(request):
 @login_required
 def label_create(request, project_id):
     project = get_object_or_404(Project, id=project_id)
+    if not is_project_leader(request.user, project):
+        messages.error(request, "Permission denied")
+        return redirect("project_detail", project_id=project_id)
     if request.method == "POST":
         name = request.POST.get("name", "")
         color = request.POST.get("color", "#3b82f6")
         Label.objects.create(project=project, name=name, color=color)
     return redirect("project_detail", project_id=project_id)
-
 
 @login_required
 def profile(request):

@@ -381,11 +381,6 @@ class DashboardAPIView(APIView):
     def get(self, request):
         user = request.user
         my_cards = Card.objects.filter(assignees=user)
-        total = my_cards.count()
-        done = my_cards.filter(status='done').count()
-        doing = my_cards.filter(status='doing').count()
-        todo = my_cards.filter(status='todo').count()
-        overdue = [c for c in my_cards.exclude(status='done').filter(deadline__isnull=False) if c.is_overdue]
 
         if user.is_admin:
             projects = Project.objects.all()
@@ -393,13 +388,13 @@ class DashboardAPIView(APIView):
             member_ids = ProjectMember.objects.filter(user=user).values_list('project_id', flat=True)
             projects = Project.objects.filter(Q(owner=user) | Q(id__in=member_ids)).distinct()
 
+        completed_projects = projects.filter(status='completed').count()
+        not_done_projects = projects.exclude(status='completed').count()
+
         return Response({
             'stats': {
-                'total_tasks': total,
-                'done': done,
-                'doing': doing,
-                'todo': todo,
-                'overdue': len(overdue),
+                'completed_projects': completed_projects,
+                'not_done_projects': not_done_projects,
             },
             'projects': ProjectSerializer(projects[:6], many=True).data,
             'my_tasks': CardSerializer(my_cards.exclude(status='done').order_by('deadline')[:5], many=True).data,

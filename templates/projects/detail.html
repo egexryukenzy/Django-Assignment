@@ -21,7 +21,7 @@
           <div class="fw-700">Project Info / ព័ត៌មានគម្រោង</div>
           <span class="badge {% if project.status == 'active' %}badge-doing{% else %}badge-todo{% endif %}" style="margin-top:4px">{{ project.status }}</span>
         </div>
-        {% if request.user == project.owner or request.user.is_admin %}
+        {% if can_lead %}
         <div style="display:flex;gap:8px">
           <a href="{% url 'project_edit' project.id %}" class="btn btn-secondary btn-sm"><i class="fa-solid fa-pen"></i> Edit</a>
           <form method="post" action="{% url 'project_delete' project.id %}" onsubmit="return confirm('Delete this project?')">
@@ -63,9 +63,11 @@
     <div class="card mb-16">
       <div class="card-header">
         <div class="fw-700">Boards / បន្ទះ</div>
+        {% if can_lead %}
         <button class="btn btn-secondary btn-sm" onclick="showModal('boardModal')">
           <i class="fa-solid fa-plus"></i> Add Board
         </button>
+        {% endif %}
       </div>
       <div class="card-body" style="padding:0">
         {% for board in boards %}
@@ -87,7 +89,7 @@
     <div class="card">
       <div class="card-header">
         <div class="fw-700">Labels / ស្លាក</div>
-        <button class="btn btn-secondary btn-sm" onclick="showModal('labelModal')"><i class="fa-solid fa-plus"></i> Add Label</button>
+        {% if can_lead %}<button class="btn btn-secondary btn-sm" onclick="showModal('labelModal')"><i class="fa-solid fa-plus"></i> Add Label</button>{% endif %}
       </div>
       <div class="card-body" style="display:flex;flex-wrap:wrap;gap:8px">
         {% for label in project.labels.all %}
@@ -106,7 +108,7 @@
     <div class="card">
       <div class="card-header">
         <div class="fw-700">Members / សមាជិក</div>
-        {% if request.user == project.owner or request.user.is_admin %}
+        {% if can_lead %}
         <button class="btn btn-secondary btn-sm" onclick="showModal('memberModal')">
           <i class="fa-solid fa-user-plus"></i>
         </button>
@@ -123,7 +125,7 @@
             <div style="font-size:13px;font-weight:600">{{ m.user.get_full_name|default:m.user.username }}</div>
             <div style="font-size:11px;color:var(--text-muted)">{{ m.role }}</div>
           </div>
-          {% if request.user == project.owner and m.user != request.user %}
+          {% if can_lead and m.user != request.user %}
           <a href="{% url 'project_remove_member' project.id m.user.id %}" style="color:var(--text-faint);font-size:12px" onclick="return confirm('Remove this member?')"><i class="fa-solid fa-xmark"></i></a>
           {% endif %}
         </div>
@@ -133,6 +135,7 @@
   </div>
 </div>
 
+{% if can_lead %}
 <!-- Add Member Modal -->
 <div class="modal-overlay" id="memberModal">
   <div class="modal-box">
@@ -231,6 +234,7 @@
     </div>
   </div>
 </div>
+{% endif %}
 
 {% endblock %}
 {% block extra_js %}

@@ -29,6 +29,7 @@ urlpatterns = [
     # Boards & Lists
     path('projects/<int:project_id>/boards/<int:board_id>/', views.board_view, name='board'),
     path('projects/<int:project_id>/boards/create/', views.board_create, name='board_create'),
+    path('projects/<int:project_id>/boards/<int:board_id>/complete/', views.project_complete, name='project_complete'),
     path('lists/<int:board_id>/create/', views.list_create, name='list_create'),
 
     # Cards

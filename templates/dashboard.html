@@ -21,7 +21,7 @@
 
   <div class="stat-card green">
     <div class="stat-icon"><i class="fa-solid fa-folder-check"></i></div>
-    <div class="stat-number">{{ completed_projects }}</div>
+    <div class="stat-number">{{ done_tasks }}</div>
     <div class="stat-label">Completed</div>
   </div>
 
@@ -139,6 +139,38 @@
       </div>
     </div>
 
+    <!-- COMPLETED TASK TABLE -->
+    <div class="card" style="margin-top:24px">
+      <div class="card-header">
+        <div class="fw-700">Completed Tasks</div>
+      </div>
+
+      <div class="card-body">
+        {% if completed_cards %}
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Task</th>
+              <th>Project</th>
+              <th>Completed</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for card in completed_cards %}
+            <tr>
+              <td>{{ card.title }}</td>
+              <td>{{ card.list.board.project.name }}</td>
+              <td>{{ card.updated_at|date:"M d, Y H:i" }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <div>No completed tasks</div>
+        {% endif %}
+      </div>
+    </div>
+
   </div>
 
   <!-- RIGHT -->
@@ -146,10 +178,10 @@
 
     <div class="card">
       <div class="card-header">
-        <h4>Task Overview</h4>
+        <h4>Project Overview</h4>
       </div>
       <div class="card-body">
-        <canvas id="taskChart"></canvas>
+        <canvas id="projectChart"></canvas>
       </div>
     </div>
 
@@ -164,13 +196,13 @@ fetch("/api/v1/dashboard/", { credentials: "include" })
   .then(data => {
     const stats = data.stats;
 
-    new Chart(document.getElementById("taskChart"), {
+    new Chart(document.getElementById("projectChart"), {
       type: "doughnut",
       data: {
-        labels: ["Done", "Doing", "To Do", "Overdue"],
+        labels: ["Done", "Not yet done"],
         datasets: [{
-          data: [stats.done, stats.doing, stats.todo, stats.overdue],
-          backgroundColor: ["#22c55e","#f59e0b","#3b82f6","#ef4444"]
+          data: [stats.completed_projects, stats.not_done_projects],
+          backgroundColor: ["#22c55e","#94a3b8"]
         }]
       }
     });
