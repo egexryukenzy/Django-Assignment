@@ -878,3 +878,117 @@ def profile(request):
         "unread_count": user.notifications.filter(is_read=False).count(),
     }
     return render(request, "profile.html", context)
+
+def admin_api_docs(request):
+    if not request.user.is_admin:
+        return redirect('dashboard')
+
+    api_sections = [
+        {
+            'title': 'Auth / ការផ្ទៀងផ្ទាត់',
+            'icon': 'lock',
+            'endpoints': [
+                {'method': 'POST',  'url': '/api/v1/auth/register/', 'desc': 'Register a new user'},
+                {'method': 'POST',  'url': '/api/v1/auth/login/',    'desc': 'Login and get token'},
+                {'method': 'POST',  'url': '/api/v1/auth/logout/',   'desc': 'Logout (delete token)'},
+                {'method': 'GET',   'url': '/api/v1/auth/me/',       'desc': 'Get current user info'},
+                {'method': 'PATCH', 'url': '/api/v1/auth/me/',       'desc': 'Update current user info'},
+            ]
+        },
+        {
+            'title': 'Users / អ្នកប្រើ',
+            'icon': 'users',
+            'endpoints': [
+                {'method': 'GET',   'url': '/api/v1/users/',      'desc': 'List all users (admin only)'},
+                {'method': 'GET',   'url': '/api/v1/users/<id>/', 'desc': 'Get user detail'},
+                {'method': 'PATCH', 'url': '/api/v1/users/<id>/', 'desc': 'Update user'},
+            ]
+        },
+        {
+            'title': 'Projects / គម្រោង',
+            'icon': 'folder-open',
+            'endpoints': [
+                {'method': 'GET',    'url': '/api/v1/projects/',              'desc': 'List all accessible projects'},
+                {'method': 'POST',   'url': '/api/v1/projects/',              'desc': 'Create a new project'},
+                {'method': 'GET',    'url': '/api/v1/projects/<id>/',         'desc': 'Get project detail'},
+                {'method': 'PUT',    'url': '/api/v1/projects/<id>/',         'desc': 'Update project'},
+                {'method': 'DELETE', 'url': '/api/v1/projects/<id>/',         'desc': 'Delete project'},
+                {'method': 'GET',    'url': '/api/v1/projects/<id>/members/', 'desc': 'List project members'},
+                {'method': 'POST',   'url': '/api/v1/projects/<id>/members/', 'desc': 'Add member to project'},
+                {'method': 'DELETE', 'url': '/api/v1/projects/<id>/members/', 'desc': 'Remove member from project'},
+                {'method': 'GET',    'url': '/api/v1/projects/<id>/boards/',  'desc': 'List boards in project'},
+                {'method': 'POST',   'url': '/api/v1/projects/<id>/boards/',  'desc': 'Create board in project'},
+                {'method': 'GET',    'url': '/api/v1/projects/<id>/labels/',  'desc': 'List labels in project'},
+                {'method': 'POST',   'url': '/api/v1/projects/<id>/labels/',  'desc': 'Create label in project'},
+            ]
+        },
+        {
+            'title': 'Boards / បន្ទះ',
+            'icon': 'table-columns',
+            'endpoints': [
+                {'method': 'GET',    'url': '/api/v1/boards/<id>/',       'desc': 'Get board detail'},
+                {'method': 'PUT',    'url': '/api/v1/boards/<id>/',       'desc': 'Update board'},
+                {'method': 'DELETE', 'url': '/api/v1/boards/<id>/',       'desc': 'Delete board'},
+                {'method': 'GET',    'url': '/api/v1/boards/<id>/lists/', 'desc': 'List all lists in board'},
+                {'method': 'POST',   'url': '/api/v1/boards/<id>/lists/', 'desc': 'Create list in board'},
+            ]
+        },
+        {
+            'title': 'Lists / បញ្ជី',
+            'icon': 'list',
+            'endpoints': [
+                {'method': 'GET',    'url': '/api/v1/lists/<id>/',       'desc': 'Get list detail'},
+                {'method': 'PUT',    'url': '/api/v1/lists/<id>/',       'desc': 'Update list'},
+                {'method': 'DELETE', 'url': '/api/v1/lists/<id>/',       'desc': 'Delete list'},
+                {'method': 'GET',    'url': '/api/v1/lists/<id>/cards/', 'desc': 'Get all cards in list'},
+                {'method': 'POST',   'url': '/api/v1/lists/<id>/cards/', 'desc': 'Create card in list'},
+            ]
+        },
+        {
+            'title': 'Cards / កាត',
+            'icon': 'square-check',
+            'endpoints': [
+                {'method': 'GET',    'url': '/api/v1/cards/<id>/',             'desc': 'Get card detail'},
+                {'method': 'PUT',    'url': '/api/v1/cards/<id>/',             'desc': 'Update card'},
+                {'method': 'DELETE', 'url': '/api/v1/cards/<id>/',             'desc': 'Delete card'},
+                {'method': 'POST',   'url': '/api/v1/cards/<id>/move/',        'desc': 'Move card to another list'},
+                {'method': 'POST',   'url': '/api/v1/cards/<id>/assign/',      'desc': 'Assign user to card'},
+                {'method': 'DELETE', 'url': '/api/v1/cards/<id>/assign/',      'desc': 'Unassign user from card'},
+                {'method': 'GET',    'url': '/api/v1/cards/<id>/comments/',    'desc': 'Get comments on card'},
+                {'method': 'POST',   'url': '/api/v1/cards/<id>/comments/',    'desc': 'Add comment to card'},
+                {'method': 'GET',    'url': '/api/v1/cards/<id>/attachments/', 'desc': 'Get attachments on card'},
+                {'method': 'POST',   'url': '/api/v1/cards/<id>/attachments/', 'desc': 'Upload attachment to card'},
+            ]
+        },
+        {
+            'title': 'Comments / មតិ',
+            'icon': 'comments',
+            'endpoints': [
+                {'method': 'GET',    'url': '/api/v1/comments/<id>/', 'desc': 'Get comment detail'},
+                {'method': 'PUT',    'url': '/api/v1/comments/<id>/', 'desc': 'Edit comment'},
+                {'method': 'DELETE', 'url': '/api/v1/comments/<id>/', 'desc': 'Delete comment'},
+            ]
+        },
+        {
+            'title': 'Notifications / ការជូនដំណឹង',
+            'icon': 'bell',
+            'endpoints': [
+                {'method': 'GET',  'url': '/api/v1/notifications/',           'desc': 'List all notifications'},
+                {'method': 'POST', 'url': '/api/v1/notifications/<id>/read/', 'desc': 'Mark notification as read'},
+                {'method': 'DELETE','url': '/api/v1/notifications/read-all/', 'desc': 'Mark all as read'},
+            ]
+        },
+        {
+            'title': 'Search & Dashboard',
+            'icon': 'chart-pie',
+            'endpoints': [
+                {'method': 'GET', 'url': '/api/v1/search/?q=<query>', 'desc': 'Search cards and projects'},
+                {'method': 'GET', 'url': '/api/v1/dashboard/',        'desc': 'Get dashboard stats & tasks'},
+            ]
+        },
+    ]
+
+    return render(request, 'admin_panel/api_docs.html', {
+        'api_sections': api_sections,
+        'unread_count': request.user.notifications.filter(is_read=False).count(),
+    })

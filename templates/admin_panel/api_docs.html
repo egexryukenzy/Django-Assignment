@@ -1,0 +1,156 @@
+{% extends 'base.html' %}
+{% block title %}API Documentation{% endblock %}
+{% block page_title %}API Documentation / ឯកសារ API{% endblock %}
+{% block content %}
+
+<style>
+.api-section { margin-bottom: 28px; }
+.api-section-title {
+  font-size: 13px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .08em; color: var(--text-muted);
+  padding: 0 0 10px 0; margin-bottom: 0;
+  display: flex; align-items: center; gap: 8px;
+}
+.api-table { width: 100%; border-collapse: collapse; }
+.api-table tr { border-bottom: 1px solid rgba(48,54,61,.5); }
+.api-table tr:last-child { border-bottom: none; }
+.api-table td { padding: 10px 16px; vertical-align: middle; font-size: 13px; }
+.method {
+  display: inline-block; width: 60px; text-align: center;
+  padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 700; font-family: monospace;
+}
+.method-get    { background: rgba(34,197,94,.15);  color: #22c55e; }
+.method-post   { background: rgba(79,110,247,.15); color: #4f6ef7; }
+.method-put    { background: rgba(234,179,8,.15);  color: #eab308; }
+.method-patch  { background: rgba(234,179,8,.15);  color: #eab308; }
+.method-delete { background: rgba(239,68,68,.15);  color: #ef4444; }
+.api-url { font-family: monospace; font-size: 12.5px; color: var(--text-primary); }
+.api-desc { color: var(--text-muted); font-size: 12px; }
+.try-btn {
+  padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600;
+  border: 1px solid rgba(79,110,247,.35); background: rgba(79,110,247,.08);
+  color: var(--accent); cursor: pointer; white-space: nowrap; text-decoration: none;
+  transition: background .15s;
+}
+.try-btn:hover { background: rgba(79,110,247,.18); }
+.base-url-badge {
+  display: inline-block; background: rgba(79,110,247,.1); border: 1px solid rgba(79,110,247,.25);
+  color: var(--accent); padding: 6px 14px; border-radius: 8px; font-family: monospace;
+  font-size: 13px; margin-bottom: 20px;
+}
+.auth-note {
+  background: rgba(234,179,8,.07); border: 1px solid rgba(234,179,8,.2);
+  border-radius: 8px; padding: 12px 16px; font-size: 12.5px; color: var(--text-muted);
+  margin-bottom: 24px; display: flex; align-items: center; gap: 10px;
+}
+.auth-note code { background: rgba(255,255,255,.07); padding: 2px 7px; border-radius: 4px; color: var(--yellow); font-size: 12px; }
+
+/* ID popup modal */
+.id-modal-overlay {
+  display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:9999; align-items:center; justify-content:center;
+}
+.id-modal-overlay.open { display:flex; }
+.id-modal {
+  background:var(--bg-card, #1e2329); border:1px solid rgba(255,255,255,.1);
+  border-radius:12px; padding:24px; min-width:320px; box-shadow:0 20px 60px rgba(0,0,0,.4);
+}
+.id-modal h4 { margin:0 0 6px; font-size:14px; color:var(--text-primary,#fff); }
+.id-modal p  { margin:0 0 16px; font-size:12px; color:var(--text-muted,#888); font-family:monospace; word-break:break-all; }
+.id-modal input {
+  width:100%; padding:8px 12px; border-radius:8px; border:1px solid rgba(255,255,255,.15);
+  background:rgba(255,255,255,.05); color:var(--text-primary,#fff); font-size:13px;
+  margin-bottom:14px; box-sizing:border-box; outline:none;
+}
+.id-modal input:focus { border-color:var(--accent,#4f6ef7); }
+.id-modal-actions { display:flex; gap:8px; justify-content:flex-end; }
+.id-modal-actions button {
+  padding:6px 16px; border-radius:8px; font-size:12px; font-weight:600; cursor:pointer; border:none;
+}
+.btn-cancel { background:rgba(255,255,255,.08); color:var(--text-muted,#888); }
+.btn-go     { background:var(--accent,#4f6ef7); color:#fff; }
+</style>
+
+<div class="base-url-badge"><i class="fa-solid fa-globe" style="margin-right:8px"></i>Base URL: /api/v1/</div>
+
+<div class="auth-note">
+  <i class="fa-solid fa-key" style="color:var(--yellow)"></i>
+  All endpoints (except login &amp; register) require header:
+  <code>Authorization: Token &lt;your_token&gt;</code>
+</div>
+
+{% for section in api_sections %}
+<div class="card api-section">
+  <div class="card-header">
+    <div class="api-section-title"><i class="fa-solid fa-{{ section.icon }}"></i> {{ section.title }}</div>
+  </div>
+  <div class="card-body" style="padding:0">
+    <table class="api-table">
+      {% for ep in section.endpoints %}
+      <tr>
+        <td style="width:70px"><span class="method method-{{ ep.method|lower }}">{{ ep.method }}</span></td>
+        <td><span class="api-url">{{ ep.url }}</span></td>
+        <td class="api-desc">{{ ep.desc }}</td>
+        <td style="width:70px;text-align:right">
+          <button class="try-btn" onclick="tryEndpoint('{{ ep.url }}')">
+            <i class="fa-solid fa-arrow-up-right-from-square" style="font-size:10px"></i> Try
+          </button>
+        </td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+</div>
+{% endfor %}
+
+<!-- ID input modal -->
+<div class="id-modal-overlay" id="idModal">
+  <div class="id-modal">
+    <h4>Enter ID to Try</h4>
+    <p id="modalUrl"></p>
+    <input type="number" id="modalIdInput" placeholder="e.g. 1" min="1" />
+    <div class="id-modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-go" onclick="goToUrl()">Open <i class="fa-solid fa-arrow-up-right-from-square" style="font-size:10px"></i></button>
+    </div>
+  </div>
+</div>
+
+<script>
+let _currentUrl = '';
+
+function tryEndpoint(url) {
+  if (!url.includes('<')) {
+    window.open(url, '_blank');
+    return;
+  }
+  _currentUrl = url;
+  document.getElementById('modalUrl').textContent = url;
+  document.getElementById('modalIdInput').value = '';
+  document.getElementById('idModal').classList.add('open');
+  setTimeout(() => document.getElementById('modalIdInput').focus(), 100);
+}
+
+function closeModal() {
+  document.getElementById('idModal').classList.remove('open');
+}
+
+function goToUrl() {
+  const id = document.getElementById('modalIdInput').value.trim();
+  if (!id) return;
+  // replace all <param> patterns with the entered id
+  let url = _currentUrl.replace(/<[^>]+>/g, id);
+  closeModal();
+  window.open(url, '_blank');
+}
+
+document.getElementById('modalIdInput').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') goToUrl();
+  if (e.key === 'Escape') closeModal();
+});
+
+document.getElementById('idModal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+</script>
+
+{% endblock %}

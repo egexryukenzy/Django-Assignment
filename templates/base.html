@@ -77,6 +77,13 @@
           <span class="nav-icon"><i class="fa-solid fa-chart-bar"></i></span>
           Reports / របាយការណ៍
         </a>
+        <a href="{% url 'admin_api_docs' %}" class="nav-link {% if request.resolver_match.url_name == 'admin_api_docs' %}active{% endif %}">
+        <span class="nav-icon"><i class="fa-solid fa-code"></i></span>
+                API Docs / ឯកសារ API
+          </a>
+
+
+
         {% endif %}
       </nav>
 
