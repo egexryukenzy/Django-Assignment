@@ -7,6 +7,7 @@ from django.db.models import Prefetch, Q
 from django.views.decorators.http import require_POST
 import json
 
+
 from .models import (
     User,
     Project,

@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from .models import User, Project, ProjectMember, Board, List, Card, Label, Comment, Attachment, Notification, CardAssignment
+from .models import AccessToken
 
 admin.site.register(User, UserAdmin)
 admin.site.register(Project)
@@ -13,3 +14,9 @@ admin.site.register(Comment)
 admin.site.register(Attachment)
 admin.site.register(Notification)
 admin.site.register(CardAssignment)
+
+
+
+@admin.register(AccessToken)
+class AccessTokenAdmin(admin.ModelAdmin):
+    list_display = ['id', 'company_name', 'token', 'expire_date', 'is_active']

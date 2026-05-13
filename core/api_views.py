@@ -6,6 +6,7 @@ from rest_framework.decorators import api_view, permission_classes
 from django.contrib.auth import authenticate
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
+from .permissions import HasAccessToken
 
 from .models import (
     User, Project, ProjectMember, Board, List, Card,
