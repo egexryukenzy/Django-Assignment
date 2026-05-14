@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+{% block title %}Access Tokens{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Access Tokens / សោចូលប្រើ API</h1>
+    <p class="page-subtitle">Manage API access tokens for external integrations</p>
+  </div>
+  <button class="btn btn-primary" onclick="document.getElementById('createModal').style.display='flex'">
+    <i class="fa-solid fa-plus"></i> Create Token
+  </button>
+</div>
+
+<div class="card">
+  <div class="card-body p-0">
+    <table style="width:100%; border-collapse:collapse;">
+      <thead>
+        <tr style="border-bottom:1px solid var(--border);">
+          <th style="padding:12px 16px; text-align:left; color:var(--text-muted); font-size:0.8rem; text-transform:uppercase;">Company</th>
+          <th style="padding:12px 16px; text-align:left; color:var(--text-muted); font-size:0.8rem; text-transform:uppercase;">Token (click to copy)</th>
+          <th style="padding:12px 16px; text-align:left; color:var(--text-muted); font-size:0.8rem; text-transform:uppercase;">Expires</th>
+          <th style="padding:12px 16px; text-align:left; color:var(--text-muted); font-size:0.8rem; text-transform:uppercase;">Status</th>
+          <th style="padding:12px 16px; text-align:left; color:var(--text-muted); font-size:0.8rem; text-transform:uppercase;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for token in tokens %}
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:12px 16px; font-weight:500;">{{ token.company_name }}</td>
+          <td style="padding:12px 16px;">
+            <code
+              data-token="{{ token.token }}"
+              title="Click to copy"
+              style="cursor:pointer; background:var(--bg-secondary); padding:4px 8px; border-radius:4px; font-size:0.8rem; user-select:all;"
+              onclick="copyToken(this)"
+            >{{ token.token }}</code>
+          </td>
+          <td style="padding:12px 16px; color:var(--text-muted);">
+            {% if token.expire_date %}{{ token.expire_date }}{% else %}<span style="color:var(--text-muted);">Never</span>{% endif %}
+          </td>
+          <td style="padding:12px 16px;">
+            {% if token.is_active %}
+              <span class="badge badge-success">Active</span>
+            {% else %}
+              <span class="badge badge-danger">Inactive</span>
+            {% endif %}
+          </td>
+          <td style="padding:12px 16px;">
+            <div style="display:flex; gap:8px;">
+              <form method="post" action="{% url 'admin_toggle_access_token' token.id %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm {% if token.is_active %}btn-warning{% else %}btn-success{% endif %}">
+                  {% if token.is_active %}Deactivate{% else %}Activate{% endif %}
+                </button>
+              </form>
+              <form method="post" action="{% url 'admin_delete_access_token' token.id %}" onsubmit="return confirm('Delete this token?')">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="5" style="padding:32px; text-align:center; color:var(--text-muted);">
+            No access tokens yet. Create one above.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Create Token Modal -->
+<div id="createModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
+  <div class="card" style="width:100%; max-width:440px; padding:24px;">
+    <h3 style="margin-bottom:16px;">Create Access Token</h3>
+    <form method="post" action="{% url 'admin_create_access_token' %}">
+      {% csrf_token %}
+      <div class="form-group" style="margin-bottom:16px;">
+        <label class="form-label">Company Name *</label>
+        <input type="text" name="company_name" class="form-control" placeholder="e.g. Acme Corp" required>
+      </div>
+      <div class="form-group" style="margin-bottom:20px;">
+        <label class="form-label">Expire Date (optional)</label>
+        <input type="date" name="expire_date" class="form-control">
+      </div>
+      <div style="display:flex; gap:8px; justify-content:flex-end;">
+        <button type="button" class="btn btn-secondary" onclick="document.getElementById('createModal').style.display='none'">Cancel</button>
+        <button type="submit" class="btn btn-primary">Create Token</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function copyToken(el) {
+  const token = el.getAttribute('data-token');
+  navigator.clipboard.writeText(token).then(() => {
+    const original = el.textContent;
+    el.textContent = '✓ Copied!';
+    el.style.color = 'var(--success, #22c55e)';
+    setTimeout(() => { el.textContent = original; el.style.color = ''; }, 1500);
+  }).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = token;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    const original = el.textContent;
+    el.textContent = '✓ Copied!';
+    el.style.color = 'var(--success, #22c55e)';
+    setTimeout(() => { el.textContent = original; el.style.color = ''; }, 1500);
+  });
+}
+
+document.getElementById('createModal').addEventListener('click', function(e) {
+  if (e.target === this) this.style.display = 'none';
+});
+</script>
+{% endblock %}

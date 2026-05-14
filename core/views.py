@@ -144,7 +144,6 @@ def logout_view(request):
 def dashboard(request):
     user = request.user
 
-    # ─── PROJECTS ─────────────────────────────
     if user.is_admin:
         projects = Project.objects.all()
     else:
@@ -155,14 +154,12 @@ def dashboard(request):
             Q(owner=user) | Q(id__in=member_ids)
         ).distinct()
 
-    projects = projects.order_by("-created_at")  # newest first
+    projects = projects.order_by("-created_at")
     total_projects = projects.count()
 
-    # 🔥 Project stats (NEW)
     completed_projects = projects.filter(status="completed").count()
     active_projects = projects.filter(status="active").count()
 
-    # ─── TASKS (CARDS) ───────────────────────
     cards = Card.objects.filter(list__board__project__in=projects).distinct()
 
     total_tasks = cards.count()
@@ -170,35 +167,28 @@ def dashboard(request):
     doing_tasks = cards.filter(status="doing").count()
     todo_tasks = cards.filter(status="todo").count()
 
-    # ─── MY TASKS ────────────────────────────
     my_cards = (
         cards.filter(assignees=user).exclude(status="done").order_by("deadline")[:5]
     )
     completed_cards = cards.filter(assignees=user, status="done").order_by("-updated_at")[:5]
 
-    # ─── OVERDUE ─────────────────────────────
     overdue_cards = [c for c in my_cards if c.is_overdue]
 
-    # ─── NOTIFICATIONS ───────────────────────
     notifications = user.notifications.filter(is_read=False).order_by("-created_at")[:5]
     unread_count = user.notifications.filter(is_read=False).count()
 
     context = {
-        # Projects
-        "projects": projects[:6],  # show latest 6 in dashboard
+        "projects": projects[:6],
         "completed_projects": completed_projects,
         "active_projects": active_projects,
-        # Tasks
         "total_tasks": total_tasks,
         "done_tasks": done_tasks,
         "doing_tasks": doing_tasks,
         "todo_tasks": todo_tasks,
         "total_projects": total_projects,
-        # Cards
         "my_cards": my_cards,
         "completed_cards": completed_cards,
         "overdue_cards": overdue_cards,
-        # Notifications
         "notifications": notifications,
         "unread_count": unread_count,
     }
@@ -245,7 +235,6 @@ def project_create(request):
             owner=request.user, name=name, description=description
         )
         ProjectMember.objects.create(project=project, user=request.user, role="owner")
-        # Default board with 3 lists
         board = Board.objects.create(project=project, name="Main Board", position=0)
         List.objects.create(board=board, title="To Do / ត្រូវធ្វើ", position=0)
         List.objects.create(board=board, title="Doing / កំពុងធ្វើ", position=1)
@@ -612,7 +601,6 @@ def card_delete(request, card_id):
 @login_required
 @require_POST
 def card_move(request):
-    """AJAX: move card to new list and position"""
     data = json.loads(request.body)
     card_id = data.get("card_id")
     list_id = data.get("list_id")
@@ -973,8 +961,8 @@ def admin_api_docs(request):
             'title': 'Notifications / ការជូនដំណឹង',
             'icon': 'bell',
             'endpoints': [
-                {'method': 'GET',  'url': '/api/v1/notifications/',           'desc': 'List all notifications'},
-                {'method': 'POST', 'url': '/api/v1/notifications/<id>/read/', 'desc': 'Mark notification as read'},
+                {'method': 'GET',   'url': '/api/v1/notifications/',           'desc': 'List all notifications'},
+                {'method': 'POST',  'url': '/api/v1/notifications/<id>/read/', 'desc': 'Mark notification as read'},
                 {'method': 'DELETE','url': '/api/v1/notifications/read-all/', 'desc': 'Mark all as read'},
             ]
         },
@@ -992,3 +980,210 @@ def admin_api_docs(request):
         'api_sections': api_sections,
         'unread_count': request.user.notifications.filter(is_read=False).count(),
     })
+
+
+# ─── Label Edit / Delete ──────────────────────────────────────────────────────
+
+@login_required
+def label_edit(request, label_id):
+    label = get_object_or_404(Label, id=label_id)
+    project = label.project
+    if not is_project_leader(request.user, project):
+        messages.error(request, "Only project leaders can edit labels.")
+        return redirect('project_detail', project_id=project.id)
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        color = request.POST.get('color', label.color)
+        if name:
+            label.name = name
+            label.color = color
+            label.save()
+            messages.success(request, "Label updated.")
+    return redirect('project_detail', project_id=project.id)
+
+
+@login_required
+def label_delete(request, label_id):
+    label = get_object_or_404(Label, id=label_id)
+    project = label.project
+    if not is_project_leader(request.user, project):
+        messages.error(request, "Only project leaders can delete labels.")
+        return redirect('project_detail', project_id=project.id)
+    if request.method == 'POST':
+        label.delete()
+        messages.success(request, "Label deleted.")
+    return redirect('project_detail', project_id=project.id)
+
+
+# ─── Board Edit / Delete ──────────────────────────────────────────────────────
+
+@login_required
+def board_edit(request, project_id, board_id):
+    project = get_object_or_404(Project, id=project_id)
+    board = get_object_or_404(Board, id=board_id, project=project)
+    if not is_project_leader(request.user, project):
+        messages.error(request, "Only project leaders can edit boards.")
+        return redirect('project_detail', project_id=project_id)
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        if name:
+            board.name = name
+            board.save()
+            messages.success(request, "Board updated.")
+    return redirect('project_detail', project_id=project_id)
+
+
+@login_required
+def board_delete(request, project_id, board_id):
+    project = get_object_or_404(Project, id=project_id)
+    board = get_object_or_404(Board, id=board_id, project=project)
+    if not is_project_leader(request.user, project):
+        messages.error(request, "Only project leaders can delete boards.")
+        return redirect('project_detail', project_id=project_id)
+    if request.method == 'POST':
+        if project.boards.count() <= 1:
+            messages.error(request, "Cannot delete the last board.")
+            return redirect('project_detail', project_id=project_id)
+        board.delete()
+        messages.success(request, "Board deleted.")
+    return redirect('project_detail', project_id=project_id)
+
+
+# ─── List Edit / Delete ───────────────────────────────────────────────────────
+
+@login_required
+def list_edit(request, list_id):
+    lst = get_object_or_404(List, id=list_id)
+    board = lst.board
+    project = board.project
+    if not can_access_project(request.user, project):
+        messages.error(request, "Access denied.")
+        return redirect('dashboard')
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        if name:
+            lst.title = name
+            lst.save()
+            messages.success(request, "List renamed.")
+    return redirect('board', project_id=project.id, board_id=board.id)
+
+
+@login_required
+def list_delete(request, list_id):
+    lst = get_object_or_404(List, id=list_id)
+    board = lst.board
+    project = board.project
+    if not is_project_leader(request.user, project):
+        messages.error(request, "Only project leaders can delete lists.")
+        return redirect('board', project_id=project.id, board_id=board.id)
+    if request.method == 'POST':
+        if board.lists.count() <= 1:
+            messages.error(request, "Cannot delete the last list.")
+            return redirect('board', project_id=project.id, board_id=board.id)
+        lst.delete()
+        messages.success(request, "List deleted.")
+    return redirect('board', project_id=project.id, board_id=board.id)
+
+
+# ─── Member Role Update ───────────────────────────────────────────────────────
+
+@login_required
+def member_role_update(request, project_id, user_id):
+    project = get_object_or_404(Project, id=project_id)
+    if not is_project_leader(request.user, project):
+        messages.error(request, "Only project leaders can change roles.")
+        return redirect('project_detail', project_id=project_id)
+    member = get_object_or_404(ProjectMember, project=project, user_id=user_id)
+    if request.method == 'POST':
+        role = request.POST.get('role', '').strip()
+        if role in ['leader', 'member']:
+            member.role = role
+            member.save()
+            messages.success(request, "Member role updated.")
+    return redirect('project_detail', project_id=project_id)
+
+
+# ─── Card Duplicate ───────────────────────────────────────────────────────────
+
+@login_required
+def card_duplicate(request, card_id):
+    card = get_object_or_404(Card, id=card_id)
+    project = card.list.board.project
+    if not can_access_project(request.user, project):
+        messages.error(request, "Access denied.")
+        return redirect('dashboard')
+    if request.method == 'POST':
+        new_card = Card.objects.create(
+            list=card.list,
+            title=card.title + ' (Copy)',
+            description=card.description,
+            priority=card.priority,
+            status=card.status,
+            deadline=card.deadline,
+            created_by=request.user,
+        )
+        new_card.labels.set(card.labels.all())
+        messages.success(request, "Card duplicated.")
+        return redirect('board', project_id=project.id, board_id=card.list.board.id)
+    return redirect('board', project_id=project.id, board_id=card.list.board.id)
+
+
+# ─── Admin Access Tokens ──────────────────────────────────────────────────────
+
+@login_required
+def admin_access_tokens(request):
+    if not request.user.is_staff:
+        return redirect('dashboard')
+    from .models import AccessToken
+    tokens = AccessToken.objects.all().order_by('-id')
+    return render(request, 'admin_panel/access_tokens.html', {
+        'tokens': tokens,
+        'unread_count': request.user.notifications.filter(is_read=False).count(),
+    })
+
+
+@login_required
+def admin_create_access_token(request):
+    if not request.user.is_staff:
+        return redirect('dashboard')
+    if request.method == 'POST':
+        from .models import AccessToken
+        import uuid
+        company_name = request.POST.get('company_name', '').strip()
+        expire_date = request.POST.get('expire_date', None) or None
+        if company_name:
+            token_value = uuid.uuid4().hex
+            AccessToken.objects.create(
+                company_name=company_name,
+                token=token_value,
+                expire_date=expire_date,
+                is_active=True,
+            )
+            messages.success(request, f"Token created for {company_name}.")
+    return redirect('admin_access_tokens')
+
+
+@login_required
+def admin_delete_access_token(request, token_id):
+    if not request.user.is_staff:
+        return redirect('dashboard')
+    from .models import AccessToken
+    token = get_object_or_404(AccessToken, id=token_id)
+    if request.method == 'POST':
+        token.delete()
+        messages.success(request, "Token deleted.")
+    return redirect('admin_access_tokens')
+
+
+@login_required
+def admin_toggle_access_token(request, token_id):
+    if not request.user.is_staff:
+        return redirect('dashboard')
+    from .models import AccessToken
+    token = get_object_or_404(AccessToken, id=token_id)
+    if request.method == 'POST':
+        token.is_active = not token.is_active
+        token.save()
+        status = "activated" if token.is_active else "deactivated"
+        messages.success(request, f"Token {status}.")
+    return redirect('admin_access_tokens')

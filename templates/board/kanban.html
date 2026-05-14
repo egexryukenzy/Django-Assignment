@@ -16,12 +16,8 @@
   background: rgba(79,110,247,.05); margin-bottom: 8px;
 }
 .project-submit-fixed {
-  position: fixed;
-  right: 28px;
-  bottom: 24px;
-  z-index: 20;
-  display: flex;
-  justify-content: flex-end;
+  position: fixed; right: 28px; bottom: 24px; z-index: 20;
+  display: flex; justify-content: flex-end;
 }
 .project-submit-fixed .btn { box-shadow: 0 10px 24px rgba(15,23,42,.18); }
 @media (max-width: 720px) {
@@ -50,7 +46,6 @@
 {% endblock %}
 
 {% block content %}
-<!-- Board Header -->
 <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap">
   {% for l in lists %}
   <div style="display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--text-muted)">
@@ -65,7 +60,6 @@
   </div>
 </div>
 
-<!-- Kanban Board -->
 <div class="kanban-board" id="kanbanBoard">
   {% for list in lists %}
   <div class="kanban-col" data-list-id="{{ list.id }}">
@@ -75,14 +69,26 @@
         <span class="kanban-col-title">{{ list.title }}</span>
         <span class="col-count">{{ list.visible_cards|length }}</span>
       </div>
-      {% if list.can_add_card %}
-      <button class="btn btn-icon btn-secondary" style="width:28px;height:28px;padding:0;font-size:12px" onclick="toggleAddCard({{ list.id }})">
-        <i class="fa-solid fa-plus"></i>
-      </button>
-      {% endif %}
+      <div style="display:flex;align-items:center;gap:4px;">
+        {% if list.can_add_card %}
+        <button class="btn btn-icon btn-secondary" style="width:28px;height:28px;padding:0;font-size:12px" onclick="toggleAddCard({{ list.id }})">
+          <i class="fa-solid fa-plus"></i>
+        </button>
+        {% endif %}
+        {% if can_lead %}
+        <button class="btn btn-icon btn-secondary" style="width:28px;height:28px;padding:0;font-size:12px" onclick="openListEditModal({{ list.id }}, '{{ list.title|escapejs }}')" title="Rename list">
+          <i class="fa-solid fa-pen"></i>
+        </button>
+        <form method="post" action="{% url 'list_delete' list.id %}" style="display:inline" onsubmit="return confirm('Delete this list and all its cards?')">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-icon btn-secondary" style="width:28px;height:28px;padding:0;font-size:12px;color:var(--red,#ef4444)" title="Delete list">
+            <i class="fa-solid fa-trash"></i>
+          </button>
+        </form>
+        {% endif %}
+      </div>
     </div>
 
-    <!-- Cards drop zone -->
     <div class="kanban-cards" id="cards-{{ list.id }}"{% if can_lead %} ondragover="dragOver(event)" ondrop="drop(event, {{ list.id }})"{% endif %}>
       {% for card in list.visible_cards %}
       <div class="kanban-card" id="card-{{ card.id }}"{% if can_lead %} draggable="true"
@@ -116,13 +122,20 @@
             </div>
             {% endfor %}
           </div>
+          {% if can_lead %}
+          <form method="post" action="{% url 'card_duplicate' card.id %}" style="display:inline" onclick="event.stopPropagation()">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-icon btn-secondary" style="width:22px;height:22px;padding:0;font-size:10px;border-radius:4px" title="Duplicate card" onclick="event.stopPropagation()">
+              <i class="fa-solid fa-copy"></i>
+            </button>
+          </form>
+          {% endif %}
         </div>
       </div>
       {% endfor %}
     </div>
 
     {% if list.can_add_card %}
-    <!-- Add Card Form (inline) -->
     <div class="add-card-form" id="addCardForm-{{ list.id }}">
       <form method="post" action="{% url 'card_create' list.id %}">
         {% csrf_token %}
@@ -138,13 +151,10 @@
         </div>
         <div style="display:flex;gap:6px;justify-content:flex-end">
           <button type="button" class="btn btn-secondary btn-sm" onclick="toggleAddCard({{ list.id }})">✕</button>
-          <button type="submit" class="btn btn-primary btn-sm">
-            <i class="fa-solid fa-plus"></i> Submit
-          </button>
+          <button type="submit" class="btn btn-primary btn-sm"><i class="fa-solid fa-plus"></i> Submit</button>
         </div>
       </form>
     </div>
-
     <button class="add-card-btn" onclick="toggleAddCard({{ list.id }})">
       <i class="fa-solid fa-plus"></i> Add card / បន្ថែមការងារ
     </button>
@@ -153,7 +163,6 @@
   {% endfor %}
 
   {% if can_lead %}
-  <!-- Add List -->
   <div style="flex-shrink:0;width:280px">
     <div id="addListToggle">
       <button class="btn btn-secondary" onclick="document.getElementById('addListToggle').style.display='none';document.getElementById('addListForm').style.display='block'" style="width:100%;justify-content:center;border-style:dashed">
@@ -218,11 +227,39 @@
   </div>
 </div>
 
+<!-- List Edit Modal -->
+<div class="modal-overlay" id="listEditModal">
+  <div class="modal-box" style="max-width:400px">
+    <div class="modal-header">
+      <div class="modal-title">Rename List / ប្តូរឈ្មោះបញ្ជី</div>
+      <button class="modal-close" onclick="hideModal('listEditModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <form id="listEditForm" method="post" action="">
+        {% csrf_token %}
+        <div class="form-group" style="margin-bottom:16px;">
+          <label class="form-label">List Name</label>
+          <input type="text" name="name" id="listEditName" class="form-control" required>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;">
+          <button type="button" class="btn btn-secondary" onclick="hideModal('listEditModal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 {% endblock %}
 
 {% block extra_js %}
 <script>
-// ── Toggle add-card form
+function openListEditModal(listId, currentName) {
+  document.getElementById('listEditForm').action = '/lists/' + listId + '/edit/';
+  document.getElementById('listEditName').value = currentName;
+  showModal('listEditModal');
+}
+
 function toggleAddCard(listId) {
   const form = document.getElementById(`addCardForm-${listId}`);
   const btn = form.nextElementSibling;
@@ -232,7 +269,6 @@ function toggleAddCard(listId) {
   if (!isVisible) form.querySelector('textarea').focus();
 }
 
-// ── Drag & Drop
 let draggedCardId = null;
 let draggedEl = null;
 
@@ -252,9 +288,7 @@ function dragOver(e) {
   e.preventDefault();
   e.dataTransfer.dropEffect = 'move';
   const zone = e.currentTarget;
-  // Show placeholder
-  const existing = zone.querySelector('.drop-placeholder');
-  if (!existing) {
+  if (!zone.querySelector('.drop-placeholder')) {
     const ph = document.createElement('div');
     ph.className = 'drop-placeholder';
     zone.appendChild(ph);
@@ -265,41 +299,24 @@ function drop(e, listId) {
   e.preventDefault();
   document.querySelectorAll('.drop-placeholder').forEach(p => p.remove());
   if (!draggedCardId) return;
-
   const zone = document.getElementById(`cards-${listId}`);
-  const cards = zone.querySelectorAll('.kanban-card');
-  const position = cards.length;
-
-  // Move card in DOM
+  const position = zone.querySelectorAll('.kanban-card').length;
   zone.appendChild(draggedEl);
-
-  // Update col counts
   updateColCounts();
-
-  // AJAX update
   fetch('/cards/move/', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
     body: JSON.stringify({ card_id: draggedCardId, list_id: listId, position: position })
-  })
-  .then(r => r.json())
-  .then(data => {
-    if (data.ok) {
-      // Update priority bar status color if needed
-      const bar = draggedEl.querySelector('.card-priority-bar');
-    }
-  });
+  }).then(r => r.json());
   draggedCardId = null;
 }
 
 function updateColCounts() {
   document.querySelectorAll('.kanban-col').forEach(col => {
-    const count = col.querySelectorAll('.kanban-card').length;
-    col.querySelector('.col-count').textContent = count;
+    col.querySelector('.col-count').textContent = col.querySelectorAll('.kanban-card').length;
   });
 }
 
-// ── Filter
 let activeFilters = { priority: '', assignee: '' };
 
 function applyFilters() {
@@ -335,14 +352,12 @@ function filterCards() {
   updateColCounts();
 }
 
-// ── Modal helpers
 function showModal(id) { document.getElementById(id).classList.add('show'); }
 function hideModal(id) { document.getElementById(id).classList.remove('show'); }
 document.querySelectorAll('.modal-overlay').forEach(m => {
   m.addEventListener('click', function(e) { if (e.target === this) this.classList.remove('show'); });
 });
 
-// ── CSRF cookie
 function getCookie(name) {
   let val = null;
   document.cookie.split(';').forEach(c => {

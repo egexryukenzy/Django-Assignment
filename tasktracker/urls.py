@@ -8,7 +8,6 @@ urlpatterns = [
     path('django-admin/', admin.site.urls),
     path('admin-panel/api-docs/', views.admin_api_docs, name='admin_api_docs'),
 
-
     # Auth
     path('', views.login_view, name='login'),
     path('login/', views.login_view, name='login'),
@@ -58,6 +57,30 @@ urlpatterns = [
 
     # Profile
     path('profile/', views.profile, name='profile'),
+
+    # Labels
+    path('labels/<int:label_id>/edit/', views.label_edit, name='label_edit'),
+    path('labels/<int:label_id>/delete/', views.label_delete, name='label_delete'),
+
+    # Board edit/delete
+    path('projects/<int:project_id>/boards/<int:board_id>/edit/', views.board_edit, name='board_edit'),
+    path('projects/<int:project_id>/boards/<int:board_id>/delete/', views.board_delete, name='board_delete'),
+
+    # List edit/delete
+    path('lists/<int:list_id>/edit/', views.list_edit, name='list_edit'),
+    path('lists/<int:list_id>/delete/', views.list_delete, name='list_delete'),
+
+    # Member role
+    path('projects/<int:project_id>/members/<int:user_id>/role/', views.member_role_update, name='member_role_update'),
+
+    # Card duplicate
+    path('cards/<int:card_id>/duplicate/', views.card_duplicate, name='card_duplicate'),
+
+    # Admin access tokens
+    path('admin-panel/access-tokens/', views.admin_access_tokens, name='admin_access_tokens'),
+    path('admin-panel/access-tokens/create/', views.admin_create_access_token, name='admin_create_access_token'),
+    path('admin-panel/access-tokens/<int:token_id>/delete/', views.admin_delete_access_token, name='admin_delete_access_token'),
+    path('admin-panel/access-tokens/<int:token_id>/toggle/', views.admin_toggle_access_token, name='admin_toggle_access_token'),
 
     # REST API
     path('api/v1/', include('core.api_urls')),

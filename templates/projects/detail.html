@@ -12,7 +12,6 @@
 {% endblock %}
 {% block content %}
 <div style="display:grid;grid-template-columns:1fr 300px;gap:20px;align-items:start">
-  <!-- Main -->
   <div>
     <!-- Project Info -->
     <div class="card mb-16">
@@ -71,14 +70,27 @@
       </div>
       <div class="card-body" style="padding:0">
         {% for board in boards %}
-        <a href="{% url 'board' project.id board.id %}" style="display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:1px solid rgba(48,54,61,.5);text-decoration:none;color:inherit;transition:background .15s" onmouseover="this.style.background='rgba(255,255,255,.03)'" onmouseout="this.style.background=''">
-          <div style="width:10px;height:10px;border-radius:3px;background:{{ board.background }}"></div>
-          <div style="flex:1">
-            <div style="font-weight:600;font-size:13.5px">{{ board.name }}</div>
-            <div style="font-size:11px;color:var(--text-muted)">{{ board.lists.count }} lists</div>
-          </div>
-          <i class="fa-solid fa-arrow-right" style="color:var(--text-faint)"></i>
-        </a>
+        <div style="display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:1px solid rgba(48,54,61,.5);">
+          <a href="{% url 'board' project.id board.id %}" style="display:flex;align-items:center;gap:12px;flex:1;text-decoration:none;color:inherit;">
+            <div style="width:10px;height:10px;border-radius:3px;background:{{ board.background }}"></div>
+            <div style="flex:1">
+              <div style="font-weight:600;font-size:13.5px">{{ board.name }}</div>
+              <div style="font-size:11px;color:var(--text-muted)">{{ board.lists.count }} lists</div>
+            </div>
+            <i class="fa-solid fa-arrow-right" style="color:var(--text-faint)"></i>
+          </a>
+          {% if can_lead %}
+          <button class="btn btn-icon btn-secondary" style="width:26px;height:26px;padding:0;font-size:11px" onclick="openBoardEditModal({{ board.id }}, '{{ board.name|escapejs }}')" title="Rename board">
+            <i class="fa-solid fa-pen"></i>
+          </button>
+          <form method="post" action="{% url 'board_delete' project.id board.id %}" style="display:inline" onsubmit="return confirm('Delete this board? All lists and cards will be lost.')">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-icon btn-secondary" style="width:26px;height:26px;padding:0;font-size:11px;color:var(--red,#ef4444)" title="Delete board">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </form>
+          {% endif %}
+        </div>
         {% empty %}
         <div style="padding:24px;text-align:center;color:var(--text-muted)">No boards yet.</div>
         {% endfor %}
@@ -93,8 +105,19 @@
       </div>
       <div class="card-body" style="display:flex;flex-wrap:wrap;gap:8px">
         {% for label in project.labels.all %}
-        <span style="background:{{ label.color }}22;border:1px solid {{ label.color }}44;color:{{ label.color }};padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600">
+        <span style="background:{{ label.color }}22;border:1px solid {{ label.color }}44;color:{{ label.color }};padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:6px;">
           <span class="label-dot" style="background:{{ label.color }}"></span>{{ label.name }}
+          {% if can_lead %}
+          <button type="button" style="background:none;border:none;cursor:pointer;padding:0;color:{{ label.color }};font-size:10px;opacity:.7" onclick="openLabelEditModal({{ label.id }}, '{{ label.name|escapejs }}', '{{ label.color }}')" title="Edit">
+            <i class="fa-solid fa-pen"></i>
+          </button>
+          <form method="post" action="{% url 'label_delete' label.id %}" style="display:inline" onsubmit="return confirm('Delete this label?')">
+            {% csrf_token %}
+            <button type="submit" style="background:none;border:none;cursor:pointer;padding:0;color:{{ label.color }};font-size:10px;opacity:.7" title="Delete">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </form>
+          {% endif %}
         </span>
         {% empty %}
         <span class="text-muted text-small">No labels yet.</span>
@@ -123,7 +146,17 @@
           </div>
           <div style="flex:1">
             <div style="font-size:13px;font-weight:600">{{ m.user.get_full_name|default:m.user.username }}</div>
+            {% if can_lead and m.user != request.user %}
+            <form method="post" action="{% url 'member_role_update' project.id m.user.id %}" style="display:inline">
+              {% csrf_token %}
+              <select name="role" class="form-control" style="font-size:11px;padding:2px 6px;height:auto;display:inline-block;width:auto;" onchange="this.form.submit()">
+                <option value="member" {% if m.role == 'member' %}selected{% endif %}>Member</option>
+                <option value="leader" {% if m.role == 'leader' %}selected{% endif %}>Leader</option>
+              </select>
+            </form>
+            {% else %}
             <div style="font-size:11px;color:var(--text-muted)">{{ m.role }}</div>
+            {% endif %}
           </div>
           {% if can_lead and m.user != request.user %}
           <a href="{% url 'project_remove_member' project.id m.user.id %}" style="color:var(--text-faint);font-size:12px" onclick="return confirm('Remove this member?')"><i class="fa-solid fa-xmark"></i></a>
@@ -158,12 +191,7 @@
           {% else %}
           <div style="background:rgba(79,110,247,.08);border:1px solid rgba(79,110,247,.2);border-radius:8px;padding:12px;font-size:13px;color:var(--text-muted)">
             <i class="fa-solid fa-circle-info" style="color:var(--accent)"></i>
-            All registered users are already members of this project.<br>
-            {% if request.user.is_admin %}
-            <a href="{% url 'admin_users' %}" style="color:var(--accent)">Create a new user</a> first, then add them here.
-            {% else %}
-            Ask an admin to create a new user account.
-            {% endif %}
+            All registered users are already members of this project.
           </div>
           {% endif %}
         </div>
@@ -236,6 +264,56 @@
 </div>
 {% endif %}
 
+<!-- Board Edit Modal -->
+<div class="modal-overlay" id="boardEditModal">
+  <div class="modal-box" style="max-width:400px">
+    <div class="modal-header">
+      <div class="modal-title">Rename Board / ប្តូរឈ្មោះបន្ទះ</div>
+      <button class="modal-close" onclick="hideModal('boardEditModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <form id="boardEditForm" method="post" action="">
+        {% csrf_token %}
+        <div class="form-group" style="margin-bottom:16px;">
+          <label class="form-label">Board Name</label>
+          <input type="text" name="name" id="boardEditName" class="form-control" required>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;">
+          <button type="button" class="btn btn-secondary" onclick="hideModal('boardEditModal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Label Edit Modal -->
+<div class="modal-overlay" id="labelEditModal">
+  <div class="modal-box" style="max-width:400px">
+    <div class="modal-header">
+      <div class="modal-title">Edit Label / កែប្រែស្លាក</div>
+      <button class="modal-close" onclick="hideModal('labelEditModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <form id="labelEditForm" method="post" action="">
+        {% csrf_token %}
+        <div class="form-group" style="margin-bottom:12px;">
+          <label class="form-label">Label Name</label>
+          <input type="text" name="name" id="labelEditName" class="form-control" required>
+        </div>
+        <div class="form-group" style="margin-bottom:16px;">
+          <label class="form-label">Color</label>
+          <input type="color" name="color" id="labelEditColor" class="form-control" style="height:40px;padding:4px 8px;">
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;">
+          <button type="button" class="btn btn-secondary" onclick="hideModal('labelEditModal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 {% endblock %}
 {% block extra_js %}
 <script>
@@ -244,5 +322,18 @@ function hideModal(id) { document.getElementById(id).classList.remove('show'); }
 document.querySelectorAll('.modal-overlay').forEach(m => {
   m.addEventListener('click', function(e) { if (e.target === this) this.classList.remove('show'); });
 });
+
+function openBoardEditModal(boardId, currentName) {
+  document.getElementById('boardEditForm').action = '/projects/{{ project.id }}/boards/' + boardId + '/edit/';
+  document.getElementById('boardEditName').value = currentName;
+  showModal('boardEditModal');
+}
+
+function openLabelEditModal(labelId, currentName, currentColor) {
+  document.getElementById('labelEditForm').action = '/labels/' + labelId + '/edit/';
+  document.getElementById('labelEditName').value = currentName;
+  document.getElementById('labelEditColor').value = currentColor;
+  showModal('labelEditModal');
+}
 </script>
 {% endblock %}
