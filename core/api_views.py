@@ -53,12 +53,16 @@ class LoginAPIView(APIView):
 
 
 class LogoutAPIView(APIView):
+    permission_classes = [permissions.IsAuthenticated]  # ← FIXED
+
     def post(self, request):
         request.user.auth_token.delete()
         return Response({'message': 'Logged out successfully'})
 
 
 class MeAPIView(APIView):
+    permission_classes = [permissions.IsAuthenticated]  # ← FIXED
+
     def get(self, request):
         return Response(UserSerializer(request.user).data)
 

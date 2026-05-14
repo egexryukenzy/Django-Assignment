@@ -25,14 +25,10 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
+        'core.permissions.HasAccessToken',
     ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
-    
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
-        'core.permissions.HasAccessToken',
-    ]
 }
 
 MIDDLEWARE = [
@@ -62,13 +58,9 @@ TEMPLATES = [
         },
     },
 ]
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-
 
 WSGI_APPLICATION = 'tasktracker.wsgi.application'
 
-# SQLite for easy setup (swap to MySQL by changing ENGINE)
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -90,10 +82,12 @@ LOGOUT_REDIRECT_URL = '/login/'
 
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
+
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'Asia/Phnom_Penh'
 USE_I18N = True
