@@ -196,6 +196,18 @@ def dashboard(request):
     return render(request, "dashboard.html", context)
 
 
+@login_required
+def project_api_crud(request):
+    if not (request.user.is_admin or request.user.is_staff or request.user.is_superuser):
+        return redirect("dashboard")
+
+    return render(
+        request,
+        "PostAPIProject.html",
+        {"unread_count": request.user.notifications.filter(is_read=False).count()},
+    )
+
+
 # ─── PROJECTS ─────────────────────────────────────────────────────────────────
 
 

@@ -25,7 +25,7 @@
           <span class="nav-icon"><i class="fa-solid fa-gauge-high"></i></span>
           Dashboard / ទំព័រដើម
         </a>
-        <a href="{% url 'projects' %}" class="nav-link {% if 'project' in request.resolver_match.url_name %}active{% endif %}">
+        <a href="{% url 'projects' %}" class="nav-link {% if request.resolver_match.url_name == 'projects' or request.resolver_match.url_name == 'project_create' or request.resolver_match.url_name == 'project_detail' or request.resolver_match.url_name == 'project_edit' %}active{% endif %}">
           <span class="nav-icon"><i class="fa-solid fa-folder-open"></i></span>
           Projects / គម្រោង
         </a>
@@ -39,7 +39,7 @@
           {% if unread_count %}<span class="nav-badge">{{ unread_count }}</span>{% endif %}
         </a>
 
-        {% if user.is_admin %}
+        {% if user.is_admin or user.is_staff or user.is_superuser %}
         <div class="nav-section" style="margin-top: 8px">Admin / អ្នកគ្រប់គ្រង</div>
         <a href="{% url 'admin_users' %}" class="nav-link {% if request.resolver_match.url_name == 'admin_users' %}active{% endif %}">
           <span class="nav-icon"><i class="fa-solid fa-users-gear"></i></span>
@@ -52,6 +52,10 @@
         <a href="{% url 'admin_api_docs' %}" class="nav-link {% if request.resolver_match.url_name == 'admin_api_docs' %}active{% endif %}">
           <span class="nav-icon"><i class="fa-solid fa-code"></i></span>
           API Docs / ឯកសារ API
+        </a>
+        <a href="{% url 'admin_project_api' %}" class="nav-link {% if request.resolver_match.url_name == 'project_api_crud' or request.resolver_match.url_name == 'admin_project_api' %}active{% endif %}">
+          <span class="nav-icon"><i class="fa-solid fa-code-branch"></i></span>
+          Project API / API Project
         </a>
         <a href="{% url 'admin_access_tokens' %}" class="nav-link {% if request.resolver_match.url_name == 'admin_access_tokens' %}active{% endif %}">
           <span class="nav-icon"><i class="fa-solid fa-key"></i></span>

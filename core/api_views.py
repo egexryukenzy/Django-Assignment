@@ -102,6 +102,7 @@ class UserDetailAPIView(generics.RetrieveUpdateAPIView):
 # ─── PROJECTS ─────────────────────────────────────────────────────────────────
 
 class ProjectListCreateAPIView(generics.ListCreateAPIView):
+    permission_classes = [permissions.IsAuthenticated]
     serializer_class = ProjectSerializer
 
     def get_queryset(self):
@@ -126,6 +127,7 @@ class ProjectListCreateAPIView(generics.ListCreateAPIView):
 
 
 class ProjectDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [permissions.IsAuthenticated]
     serializer_class = ProjectSerializer
 
     def get_queryset(self):

@@ -1,0 +1,359 @@
+{% extends 'base.html' %}
+
+{% block title %}Project API{% endblock %}
+{% block page_title %}Project API / POST PUT DELETE{% endblock %}
+
+{% block extra_head %}
+<style>
+  .api-shell {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) 360px;
+    gap: 20px;
+    align-items: start;
+  }
+
+  .api-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .api-full {
+    grid-column: 1 / -1;
+  }
+
+  .api-help {
+    color: var(--text-muted);
+    font-size: 12px;
+    margin-top: 6px;
+  }
+
+  .api-method {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .4px;
+  }
+
+  .api-method.post { background: rgba(46,160,67,.15); color: var(--green); }
+  .api-method.put { background: rgba(210,153,34,.15); color: var(--yellow); }
+  .api-method.delete { background: rgba(248,81,73,.15); color: var(--red); }
+
+  .api-endpoint {
+    color: var(--text-muted);
+    font-family: Consolas, Monaco, monospace;
+    font-size: 12px;
+  }
+
+  .api-project-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .api-project-item {
+    background: var(--bg-dark);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+  }
+
+  .api-project-name {
+    color: var(--text-primary);
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+
+  @media (max-width: 1100px) {
+    .api-shell {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 700px) {
+    .api-form-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block topbar_extra %}
+<a href="{% url 'projects' %}" class="btn btn-secondary">
+  <i class="fa-solid fa-folder-open"></i> Projects
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="api-shell">
+  <div>
+    <div class="card mb-24">
+      <div class="card-header">
+        <div>
+          <div class="fw-700">Create Project</div>
+          <div class="api-endpoint">POST /api/v1/projects/</div>
+        </div>
+        <span class="api-method post">POST</span>
+      </div>
+      <div class="card-body">
+        <form id="postProjectForm" class="api-form-grid">
+          {% csrf_token %}
+          <div class="form-group">
+            <label class="form-label" for="postProjectName">Project Name</label>
+            <input type="text" class="form-control" id="postProjectName" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="postProjectStatus">Status</label>
+            <select class="form-control" id="postProjectStatus">
+              <option value="active">Active</option>
+              <option value="completed">Completed</option>
+            </select>
+          </div>
+
+          <div class="form-group api-full">
+            <label class="form-label" for="postProjectDescription">Description</label>
+            <textarea class="form-control" id="postProjectDescription"></textarea>
+          </div>
+
+          <div class="api-full d-flex justify-between align-center gap-12">
+            <div id="postMsg" class="w-100"></div>
+            <button type="submit" class="btn btn-primary">
+              <i class="fa-solid fa-plus"></i> Save Project
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="card mb-24">
+      <div class="card-header">
+        <div>
+          <div class="fw-700">Update Project</div>
+          <div class="api-endpoint">PUT /api/v1/projects/&lt;id&gt;/</div>
+        </div>
+        <span class="api-method put">PUT</span>
+      </div>
+      <div class="card-body">
+        <form id="putProjectForm" class="api-form-grid">
+          <div class="form-group">
+            <label class="form-label" for="putProjectId">Project ID</label>
+            <input type="number" class="form-control" id="putProjectId" required>
+            <div class="api-help">Use the ID from the project list.</div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="putProjectStatus">Status</label>
+            <select class="form-control" id="putProjectStatus">
+              <option value="active">Active</option>
+              <option value="completed">Completed</option>
+            </select>
+          </div>
+
+          <div class="form-group api-full">
+            <label class="form-label" for="putProjectName">Project Name</label>
+            <input type="text" class="form-control" id="putProjectName" required>
+          </div>
+
+          <div class="form-group api-full">
+            <label class="form-label" for="putProjectDescription">Description</label>
+            <textarea class="form-control" id="putProjectDescription"></textarea>
+          </div>
+
+          <div class="api-full d-flex justify-between align-center gap-12">
+            <div id="putMsg" class="w-100"></div>
+            <button type="submit" class="btn btn-secondary">
+              <i class="fa-solid fa-pen"></i> Update Project
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="fw-700 text-danger">Delete Project</div>
+          <div class="api-endpoint">DELETE /api/v1/projects/&lt;id&gt;/</div>
+        </div>
+        <span class="api-method delete">DELETE</span>
+      </div>
+      <div class="card-body">
+        <form id="deleteProjectForm" class="api-form-grid">
+          <div class="form-group api-full">
+            <label class="form-label" for="deleteProjectId">Project ID</label>
+            <input type="number" class="form-control" id="deleteProjectId" required>
+            <div class="api-help">Deleting a project also removes its boards, lists, and cards.</div>
+          </div>
+
+          <div class="api-full d-flex justify-between align-center gap-12">
+            <div id="deleteMsg" class="w-100"></div>
+            <button type="submit" class="btn btn-danger">
+              <i class="fa-solid fa-trash"></i> Delete Project
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <div class="fw-700">Latest Projects</div>
+        <div class="text-small text-muted">Data from /api/v1/projects/</div>
+      </div>
+      <button type="button" class="btn btn-secondary btn-sm" id="refreshProjects">
+        <i class="fa-solid fa-rotate"></i> Refresh
+      </button>
+    </div>
+    <div class="card-body">
+      <div id="projectsList" class="api-project-list"></div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const PROJECT_API = "/api/v1/projects/";
+
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== "") {
+    const cookies = document.cookie.split(";");
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      if (cookie.substring(0, name.length + 1) === (name + "=")) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
+}
+
+const csrftoken = getCookie("csrftoken");
+
+function showMessage(elementId, type, message) {
+  document.getElementById(elementId).innerHTML =
+    `<div class="alert alert-${type}">${message}</div>`;
+}
+
+async function requestJson(url, options = {}) {
+  const res = await fetch(url, {
+    ...options,
+    credentials: "same-origin",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRFToken": csrftoken,
+      ...(options.headers || {})
+    }
+  });
+  const data = res.status === 204 ? null : await res.json().catch(() => null);
+  if (!res.ok) {
+    throw new Error(data ? JSON.stringify(data) : `HTTP ${res.status}`);
+  }
+  return data;
+}
+
+function escapeHtml(value) {
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+async function loadProjects() {
+  const data = await requestJson(PROJECT_API);
+  const projects = Array.isArray(data) ? data : data.results || [];
+  const list = document.getElementById("projectsList");
+
+  if (!projects.length) {
+    list.innerHTML = '<div class="text-muted">No projects found.</div>';
+    return;
+  }
+
+  list.innerHTML = projects.map(project => `
+    <div class="api-project-item">
+      <div class="d-flex justify-between align-center gap-8">
+        <div class="api-project-name">ID ${project.id}: ${escapeHtml(project.name)}</div>
+        <span class="badge badge-${escapeHtml(project.status)}">${escapeHtml(project.status)}</span>
+      </div>
+      <div class="text-small text-muted">${escapeHtml(project.description || "No description")}</div>
+    </div>
+  `).join("");
+}
+
+document.getElementById("postProjectForm").addEventListener("submit", async function(e) {
+  e.preventDefault();
+
+  const payload = {
+    name: document.getElementById("postProjectName").value.trim(),
+    description: document.getElementById("postProjectDescription").value.trim(),
+    status: document.getElementById("postProjectStatus").value
+  };
+
+  try {
+    const project = await requestJson(PROJECT_API, {
+      method: "POST",
+      body: JSON.stringify(payload)
+    });
+    showMessage("postMsg", "success", `Project created successfully. ID: ${project.id}`);
+    this.reset();
+    loadProjects();
+  } catch (err) {
+    showMessage("postMsg", "error", `Error: ${err.message}`);
+  }
+});
+
+document.getElementById("putProjectForm").addEventListener("submit", async function(e) {
+  e.preventDefault();
+
+  const projectId = document.getElementById("putProjectId").value;
+  const payload = {
+    name: document.getElementById("putProjectName").value.trim(),
+    description: document.getElementById("putProjectDescription").value.trim(),
+    status: document.getElementById("putProjectStatus").value
+  };
+
+  try {
+    const project = await requestJson(`${PROJECT_API}${projectId}/`, {
+      method: "PUT",
+      body: JSON.stringify(payload)
+    });
+    showMessage("putMsg", "success", `Project updated successfully. ID: ${project.id}`);
+    loadProjects();
+  } catch (err) {
+    showMessage("putMsg", "error", `Error: ${err.message}`);
+  }
+});
+
+document.getElementById("deleteProjectForm").addEventListener("submit", async function(e) {
+  e.preventDefault();
+
+  const projectId = document.getElementById("deleteProjectId").value;
+  if (!confirm(`Delete project ID ${projectId}?`)) return;
+
+  try {
+    await requestJson(`${PROJECT_API}${projectId}/`, { method: "DELETE" });
+    showMessage("deleteMsg", "success", `Deleted successfully. ID: ${projectId}`);
+    this.reset();
+    loadProjects();
+  } catch (err) {
+    showMessage("deleteMsg", "error", `Error: ${err.message}`);
+  }
+});
+
+document.getElementById("refreshProjects").addEventListener("click", loadProjects);
+loadProjects().catch(err => {
+  showMessage("postMsg", "info", `Could not load projects: ${err.message}`);
+});
+</script>
+{% endblock %}

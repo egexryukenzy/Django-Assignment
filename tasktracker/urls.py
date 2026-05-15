@@ -16,6 +16,8 @@ urlpatterns = [
 
     # Dashboard
     path('dashboard/', views.dashboard, name='dashboard'),
+    path('api/PostAPIProject/', views.project_api_crud, name='project_api_crud'),
+    path('admin-panel/project-api/', views.project_api_crud, name='admin_project_api'),
 
     # Projects
     path('projects/', views.project_list, name='projects'),
