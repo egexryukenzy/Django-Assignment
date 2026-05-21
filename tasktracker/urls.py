@@ -7,6 +7,8 @@ from core import views
 urlpatterns = [
     path('django-admin/', admin.site.urls),
     path('admin-panel/api-docs/', views.admin_api_docs, name='admin_api_docs'),
+    path('notifications/stream/', views.notifications_stream, name='notifications_stream'),
+
 
     # Auth
     path('', views.login_view, name='login'),

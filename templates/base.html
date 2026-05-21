@@ -148,6 +148,93 @@
         setTheme(document.body.classList.contains("light-mode") ? "dark" : "light");
       });
     </script>
-    {% block extra_js %}{% endblock %}
+        {% block extra_js %}{% endblock %}
+
+    {% if user.is_authenticated %}
+    <style>
+      #toast-container {
+        position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+        display: flex; flex-direction: column; gap: 10px; pointer-events: none;
+      }
+      .notif-toast {
+        pointer-events: all; display: flex; align-items: flex-start; gap: 12px;
+        background: var(--surface, #1e293b); border: 1px solid var(--border, #334155);
+        border-left: 4px solid var(--primary, #6366f1); border-radius: 10px;
+        padding: 14px 16px; min-width: 300px; max-width: 380px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.35); animation: toast-in 0.3s ease;
+        cursor: pointer; transition: opacity 0.3s ease;
+      }
+      .notif-toast.deadline { border-left-color: #f59e0b; }
+      .notif-toast.comment  { border-left-color: #22d3ee; }
+      .notif-toast.assigned { border-left-color: #6366f1; }
+      .notif-toast.status   { border-left-color: #10b981; }
+      .notif-toast.mention  { border-left-color: #ec4899; }
+      .toast-icon { font-size: 18px; margin-top: 2px; flex-shrink: 0; }
+      .toast-body { flex: 1; }
+      .toast-title { font-weight: 600; font-size: 13px; color: var(--text, #f1f5f9); }
+      .toast-msg   { font-size: 12px; color: var(--text-faint, #94a3b8); margin-top: 3px; line-height: 1.4; }
+      @keyframes toast-in {
+        from { opacity: 0; transform: translateX(40px); }
+        to   { opacity: 1; transform: translateX(0); }
+      }
+    </style>
+
+    <div id="toast-container"></div>
+
+    <script>
+    (function () {
+      const STREAM_URL = "{% url 'notifications_stream' %}";
+      const badgeEl   = document.querySelector('.nav-badge');
+      const bellDotEl = document.querySelector('.topbar-actions a[href*="notifications"] span');
+
+      function updateBadge(count) {
+        if (badgeEl) { badgeEl.textContent = count; badgeEl.style.display = count > 0 ? '' : 'none'; }
+        if (bellDotEl) { bellDotEl.style.display = count > 0 ? '' : 'none'; }
+      }
+
+      const ICONS = {
+        deadline : { icon: 'fa-clock',                  label: 'Deadline Reminder' },
+        comment  : { icon: 'fa-comment',                label: 'New Comment' },
+        assigned : { icon: 'fa-user-check',             label: 'Task Assigned' },
+        status   : { icon: 'fa-arrow-right-arrow-left', label: 'Status Changed' },
+        mention  : { icon: 'fa-at',                     label: 'You were mentioned' },
+      };
+
+      function showToast(notif) {
+        const meta  = ICONS[notif.type] || { icon: 'fa-bell', label: 'Notification' };
+        const toast = document.createElement('div');
+        toast.className = `notif-toast ${notif.type}`;
+        toast.innerHTML = `
+          <div class="toast-icon"><i class="fa-solid ${meta.icon}"></i></div>
+          <div class="toast-body">
+            <div class="toast-title">${meta.label}</div>
+            <div class="toast-msg">${notif.message}</div>
+          </div>`;
+        if (notif.link) toast.addEventListener('click', () => { window.location.href = notif.link; });
+        document.getElementById('toast-container').appendChild(toast);
+        setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 350); }, 6000);
+      }
+
+      let es;
+      function connect() {
+        es = new EventSource(STREAM_URL);
+        es.addEventListener('connected', () => console.debug('[SSE] Connected.'));
+        es.onmessage = function (e) {
+          try {
+            const data = JSON.parse(e.data);
+            updateBadge(data.unread_count || 0);
+            (data.new || []).forEach(showToast);
+          } catch(err) { console.warn('[SSE] Parse error:', err); }
+        };
+        es.onerror = function () {
+          console.warn('[SSE] Lost — reconnecting in 30s.');
+          es.close(); setTimeout(connect, 30000);
+        };
+      }
+      connect();
+    })();
+    </script>
+    {% endif %}
   </body>
 </html>
+

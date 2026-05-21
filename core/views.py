@@ -243,8 +243,9 @@ def project_create(request):
     if request.method == "POST":
         name = request.POST.get("name")
         description = request.POST.get("description", "")
+        deadline = request.POST.get("deadline") or None
         project = Project.objects.create(
-            owner=request.user, name=name, description=description
+            owner=request.user, name=name, description=description, deadline=deadline
         )
         ProjectMember.objects.create(project=project, user=request.user, role="owner")
         board = Board.objects.create(project=project, name="Main Board", position=0)
@@ -258,6 +259,7 @@ def project_create(request):
         "projects/create.html",
         {"unread_count": request.user.notifications.filter(is_read=False).count()},
     )
+
 
 
 @login_required
@@ -292,6 +294,7 @@ def project_edit(request, project_id):
         project.name = request.POST.get("name", project.name)
         project.description = request.POST.get("description", project.description)
         project.status = request.POST.get("status", project.status)
+        project.deadline = request.POST.get("deadline") or None
         project.save()
         messages.success(request, "Project updated!")
         return redirect("project_detail", project_id=project_id)
@@ -1199,3 +1202,47 @@ def admin_toggle_access_token(request, token_id):
         status = "activated" if token.is_active else "deactivated"
         messages.success(request, f"Token {status}.")
     return redirect('admin_access_tokens')
+
+# ─── REAL-TIME NOTIFICATIONS (SSE) ───────────────────────────────────────────
+
+import time
+import json as _json
+from django.http import StreamingHttpResponse
+from django.views.decorators.http import require_GET
+
+@login_required
+@require_GET
+def notifications_stream(request):
+    def event_stream(user_id):
+        from .models import Notification, User as _User
+
+        seen_ids = set(
+            Notification.objects.filter(user_id=user_id).values_list("id", flat=True)
+        )
+        yield "event: connected\ndata: {}\n\n"
+
+        while True:
+            time.sleep(15)
+            try:
+                user = _User.objects.get(pk=user_id)
+            except _User.DoesNotExist:
+                break
+
+            unread_count = Notification.objects.filter(user=user, is_read=False).count()
+            new_notifs = Notification.objects.filter(user=user).exclude(id__in=seen_ids).order_by("id")
+
+            new_data = []
+            for n in new_notifs:
+                new_data.append({
+                    "id": n.id, "type": n.type,
+                    "message": n.message, "link": n.link, "is_read": n.is_read,
+                })
+                seen_ids.add(n.id)
+
+            payload = _json.dumps({"unread_count": unread_count, "new": new_data})
+            yield f"data: {payload}\n\n"
+
+    response = StreamingHttpResponse(event_stream(request.user.pk), content_type="text/event-stream")
+    response["Cache-Control"] = "no-cache"
+    response["X-Accel-Buffering"] = "no"
+    return response
