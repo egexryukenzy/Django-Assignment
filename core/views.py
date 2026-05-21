@@ -208,6 +208,30 @@ def project_api_crud(request):
     )
 
 
+@login_required
+def board_api_crud(request):
+    if not (request.user.is_admin or request.user.is_staff or request.user.is_superuser):
+        return redirect("dashboard")
+
+    return render(
+        request,
+        "PostAPIBoard.html",
+        {"unread_count": request.user.notifications.filter(is_read=False).count()},
+    )
+
+
+@login_required
+def card_api_crud(request):
+    if not (request.user.is_admin or request.user.is_staff or request.user.is_superuser):
+        return redirect("dashboard")
+
+    return render(
+        request,
+        "PostAPICard.html",
+        {"unread_count": request.user.notifications.filter(is_read=False).count()},
+    )
+
+
 # ─── PROJECTS ─────────────────────────────────────────────────────────────────
 
 

@@ -1,0 +1,302 @@
+{% extends 'base.html' %}
+
+{% block title %}Card API{% endblock %}
+{% block page_title %}Card API / POST PUT DELETE{% endblock %}
+
+{% block extra_head %}
+<style>
+  .api-shell { display: grid; grid-template-columns: minmax(0, 1.15fr) 360px; gap: 20px; align-items: start; }
+  .api-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .api-full { grid-column: 1 / -1; }
+  .api-help { color: var(--text-muted); font-size: 12px; margin-top: 6px; }
+  .api-method { display: inline-flex; align-items: center; gap: 6px; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 800; letter-spacing: .4px; }
+  .api-method.post { background: rgba(46,160,67,.15); color: var(--green); }
+  .api-method.put { background: rgba(210,153,34,.15); color: var(--yellow); }
+  .api-method.delete { background: rgba(248,81,73,.15); color: var(--red); }
+  .api-endpoint { color: var(--text-muted); font-family: Consolas, Monaco, monospace; font-size: 12px; }
+  .api-resource-list { display: flex; flex-direction: column; gap: 10px; }
+  .api-resource-item { background: var(--bg-dark); border: 1px solid var(--border); border-radius: 8px; padding: 12px; }
+  .api-resource-name { color: var(--text-primary); font-weight: 700; margin-bottom: 4px; }
+  @media (max-width: 1100px) { .api-shell { grid-template-columns: 1fr; } }
+  @media (max-width: 700px) { .api-form-grid { grid-template-columns: 1fr; } }
+</style>
+{% endblock %}
+
+{% block topbar_extra %}
+<a href="{% url 'admin_project_api' %}" class="btn btn-secondary"><i class="fa-solid fa-code-branch"></i> Project API</a>
+<a href="{% url 'admin_board_api' %}" class="btn btn-secondary"><i class="fa-solid fa-columns"></i> Board API</a>
+{% endblock %}
+
+{% block content %}
+<div class="api-shell">
+  <div>
+    <div class="card mb-24">
+      <div class="card-header">
+        <div>
+          <div class="fw-700">Create Card</div>
+          <div class="api-endpoint">POST /api/v1/lists/&lt;list_id&gt;/cards/</div>
+        </div>
+        <span class="api-method post">POST</span>
+      </div>
+      <div class="card-body">
+        <form id="postCardForm" class="api-form-grid">
+          {% csrf_token %}
+          <div class="form-group">
+            <label class="form-label" for="postListId">List ID</label>
+            <input type="number" class="form-control" id="postListId" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="postCardPriority">Priority</label>
+            <select class="form-control" id="postCardPriority">
+              <option value="low">Low</option>
+              <option value="medium" selected>Medium</option>
+              <option value="high">High</option>
+              <option value="critical">Critical</option>
+            </select>
+          </div>
+          <div class="form-group api-full">
+            <label class="form-label" for="postCardTitle">Card Title</label>
+            <input type="text" class="form-control" id="postCardTitle" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="postCardDeadline">Deadline</label>
+            <input type="date" class="form-control" id="postCardDeadline">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="postCardPosition">Position</label>
+            <input type="number" class="form-control" id="postCardPosition" value="0" min="0">
+          </div>
+          <div class="form-group api-full">
+            <label class="form-label" for="postCardDescription">Description</label>
+            <textarea class="form-control" id="postCardDescription"></textarea>
+          </div>
+          <div class="api-full d-flex justify-between align-center gap-12">
+            <div id="postMsg" class="w-100"></div>
+            <button type="submit" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Save Card</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="card mb-24">
+      <div class="card-header">
+        <div>
+          <div class="fw-700">Update Card</div>
+          <div class="api-endpoint">PUT /api/v1/cards/&lt;id&gt;/</div>
+        </div>
+        <span class="api-method put">PUT</span>
+      </div>
+      <div class="card-body">
+        <form id="putCardForm" class="api-form-grid">
+          <div class="form-group">
+            <label class="form-label" for="putCardId">Card ID</label>
+            <input type="number" class="form-control" id="putCardId" required>
+            <div class="api-help">Use the ID from the card list.</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="putListId">List ID</label>
+            <input type="number" class="form-control" id="putListId" required>
+          </div>
+          <div class="form-group api-full">
+            <label class="form-label" for="putCardTitle">Card Title</label>
+            <input type="text" class="form-control" id="putCardTitle" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="putCardPriority">Priority</label>
+            <select class="form-control" id="putCardPriority">
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+              <option value="critical">Critical</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="putCardStatus">Status</label>
+            <select class="form-control" id="putCardStatus">
+              <option value="todo">To Do</option>
+              <option value="doing">Doing</option>
+              <option value="done">Done</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="putCardDeadline">Deadline</label>
+            <input type="date" class="form-control" id="putCardDeadline">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="putCardPosition">Position</label>
+            <input type="number" class="form-control" id="putCardPosition" value="0" min="0">
+          </div>
+          <div class="form-group api-full">
+            <label class="form-label" for="putCardDescription">Description</label>
+            <textarea class="form-control" id="putCardDescription"></textarea>
+          </div>
+          <div class="api-full d-flex justify-between align-center gap-12">
+            <div id="putMsg" class="w-100"></div>
+            <button type="submit" class="btn btn-secondary"><i class="fa-solid fa-pen"></i> Update Card</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="fw-700 text-danger">Delete Card</div>
+          <div class="api-endpoint">DELETE /api/v1/cards/&lt;id&gt;/</div>
+        </div>
+        <span class="api-method delete">DELETE</span>
+      </div>
+      <div class="card-body">
+        <form id="deleteCardForm" class="api-form-grid">
+          <div class="form-group api-full">
+            <label class="form-label" for="deleteCardId">Card ID</label>
+            <input type="number" class="form-control" id="deleteCardId" required>
+          </div>
+          <div class="api-full d-flex justify-between align-center gap-12">
+            <div id="deleteMsg" class="w-100"></div>
+            <button type="submit" class="btn btn-danger"><i class="fa-solid fa-trash"></i> Delete Card</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <div class="fw-700">Cards by List</div>
+        <div class="text-small text-muted">Data from /api/v1/lists/&lt;id&gt;/cards/</div>
+      </div>
+      <button type="button" class="btn btn-secondary btn-sm" id="refreshCards"><i class="fa-solid fa-rotate"></i> Refresh</button>
+    </div>
+    <div class="card-body">
+      <div class="form-group mb-16">
+        <label class="form-label" for="filterListId">List ID</label>
+        <input type="number" class="form-control" id="filterListId" placeholder="Enter list ID">
+      </div>
+      <div id="cardsList" class="api-resource-list"></div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== "") {
+    const cookies = document.cookie.split(";");
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      if (cookie.substring(0, name.length + 1) === (name + "=")) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
+}
+const csrftoken = getCookie("csrftoken");
+function showMessage(elementId, type, message) {
+  document.getElementById(elementId).innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+}
+async function requestJson(url, options = {}) {
+  const res = await fetch(url, {
+    ...options,
+    credentials: "same-origin",
+    headers: { "Content-Type": "application/json", "X-CSRFToken": csrftoken, ...(options.headers || {}) }
+  });
+  const data = res.status === 204 ? null : await res.json().catch(() => null);
+  if (!res.ok) throw new Error(data ? JSON.stringify(data) : `HTTP ${res.status}`);
+  return data;
+}
+function escapeHtml(value) {
+  return String(value || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+}
+function cardListUrl(listId) {
+  return `/api/v1/lists/${listId}/cards/`;
+}
+function cardPayload(prefix, includeStatus) {
+  const deadline = document.getElementById(`${prefix}CardDeadline`).value;
+  const listId = document.getElementById(`${prefix}ListId`).value;
+  const payload = {
+    title: document.getElementById(`${prefix}CardTitle`).value.trim(),
+    description: document.getElementById(`${prefix}CardDescription`).value.trim(),
+    priority: document.getElementById(`${prefix}CardPriority`).value,
+    deadline: deadline || null,
+    position: Number(document.getElementById(`${prefix}CardPosition`).value || 0),
+    list: Number(listId)
+  };
+  if (includeStatus) payload.status = document.getElementById(`${prefix}CardStatus`).value;
+  return payload;
+}
+async function loadCards() {
+  const listId = document.getElementById("filterListId").value || document.getElementById("postListId").value;
+  const list = document.getElementById("cardsList");
+  if (!listId) {
+    list.innerHTML = '<div class="text-muted">Enter a list ID to load cards.</div>';
+    return;
+  }
+  const data = await requestJson(cardListUrl(listId));
+  const cards = Array.isArray(data) ? data : data.results || [];
+  if (!cards.length) {
+    list.innerHTML = '<div class="text-muted">No cards found for this list.</div>';
+    return;
+  }
+  list.innerHTML = cards.map(card => `
+    <div class="api-resource-item">
+      <div class="d-flex justify-between align-center gap-8">
+        <div class="api-resource-name">ID ${card.id}: ${escapeHtml(card.title)}</div>
+        <span class="badge badge-${escapeHtml(card.status)}">${escapeHtml(card.status)}</span>
+      </div>
+      <div class="text-small text-muted">${escapeHtml(card.description || "No description")}</div>
+      <div class="text-small text-muted">Priority ${escapeHtml(card.priority)} | List ${escapeHtml(card.list)} | Deadline ${escapeHtml(card.deadline || "-")}</div>
+    </div>
+  `).join("");
+}
+document.getElementById("postCardForm").addEventListener("submit", async function(e) {
+  e.preventDefault();
+  const listId = document.getElementById("postListId").value;
+  try {
+    const card = await requestJson(cardListUrl(listId), { method: "POST", body: JSON.stringify(cardPayload("post", false)) });
+    showMessage("postMsg", "success", `Card created successfully. ID: ${card.id}`);
+    document.getElementById("filterListId").value = listId;
+    this.reset();
+    document.getElementById("postCardPriority").value = "medium";
+    document.getElementById("postCardPosition").value = "0";
+    loadCards();
+  } catch (err) {
+    showMessage("postMsg", "error", `Error: ${err.message}`);
+  }
+});
+document.getElementById("putCardForm").addEventListener("submit", async function(e) {
+  e.preventDefault();
+  const cardId = document.getElementById("putCardId").value;
+  const listId = document.getElementById("putListId").value;
+  try {
+    const card = await requestJson(`/api/v1/cards/${cardId}/`, { method: "PUT", body: JSON.stringify(cardPayload("put", true)) });
+    showMessage("putMsg", "success", `Card updated successfully. ID: ${card.id}`);
+    document.getElementById("filterListId").value = listId;
+    loadCards();
+  } catch (err) {
+    showMessage("putMsg", "error", `Error: ${err.message}`);
+  }
+});
+document.getElementById("deleteCardForm").addEventListener("submit", async function(e) {
+  e.preventDefault();
+  const cardId = document.getElementById("deleteCardId").value;
+  if (!confirm(`Delete card ID ${cardId}?`)) return;
+  try {
+    await requestJson(`/api/v1/cards/${cardId}/`, { method: "DELETE" });
+    showMessage("deleteMsg", "success", `Deleted successfully. ID: ${cardId}`);
+    this.reset();
+    loadCards();
+  } catch (err) {
+    showMessage("deleteMsg", "error", `Error: ${err.message}`);
+  }
+});
+document.getElementById("refreshCards").addEventListener("click", loadCards);
+document.getElementById("filterListId").addEventListener("change", loadCards);
+loadCards();
+</script>
+{% endblock %}

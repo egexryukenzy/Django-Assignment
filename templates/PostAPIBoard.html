@@ -1,0 +1,266 @@
+{% extends 'base.html' %}
+
+{% block title %}Board API{% endblock %}
+{% block page_title %}Board API / POST PUT DELETE{% endblock %}
+
+{% block extra_head %}
+<style>
+  .api-shell { display: grid; grid-template-columns: minmax(0, 1.15fr) 360px; gap: 20px; align-items: start; }
+  .api-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .api-full { grid-column: 1 / -1; }
+  .api-help { color: var(--text-muted); font-size: 12px; margin-top: 6px; }
+  .api-method { display: inline-flex; align-items: center; gap: 6px; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 800; letter-spacing: .4px; }
+  .api-method.post { background: rgba(46,160,67,.15); color: var(--green); }
+  .api-method.put { background: rgba(210,153,34,.15); color: var(--yellow); }
+  .api-method.delete { background: rgba(248,81,73,.15); color: var(--red); }
+  .api-endpoint { color: var(--text-muted); font-family: Consolas, Monaco, monospace; font-size: 12px; }
+  .api-resource-list { display: flex; flex-direction: column; gap: 10px; }
+  .api-resource-item { background: var(--bg-dark); border: 1px solid var(--border); border-radius: 8px; padding: 12px; }
+  .api-resource-name { color: var(--text-primary); font-weight: 700; margin-bottom: 4px; }
+  .api-color-chip { width: 18px; height: 18px; border: 1px solid var(--border); border-radius: 4px; flex: 0 0 auto; }
+  @media (max-width: 1100px) { .api-shell { grid-template-columns: 1fr; } }
+  @media (max-width: 700px) { .api-form-grid { grid-template-columns: 1fr; } }
+</style>
+{% endblock %}
+
+{% block topbar_extra %}
+<a href="{% url 'admin_project_api' %}" class="btn btn-secondary"><i class="fa-solid fa-code-branch"></i> Project API</a>
+<a href="{% url 'admin_card_api' %}" class="btn btn-secondary"><i class="fa-solid fa-note-sticky"></i> Card API</a>
+{% endblock %}
+
+{% block content %}
+<div class="api-shell">
+  <div>
+    <div class="card mb-24">
+      <div class="card-header">
+        <div>
+          <div class="fw-700">Create Board</div>
+          <div class="api-endpoint">POST /api/v1/projects/&lt;project_id&gt;/boards/</div>
+        </div>
+        <span class="api-method post">POST</span>
+      </div>
+      <div class="card-body">
+        <form id="postBoardForm" class="api-form-grid">
+          {% csrf_token %}
+          <div class="form-group">
+            <label class="form-label" for="postProjectId">Project ID</label>
+            <input type="number" class="form-control" id="postProjectId" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="postBoardPosition">Position</label>
+            <input type="number" class="form-control" id="postBoardPosition" value="0" min="0">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="postBoardName">Board Name</label>
+            <input type="text" class="form-control" id="postBoardName" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="postBoardBackground">Background</label>
+            <input type="color" class="form-control" id="postBoardBackground" value="#1e293b">
+          </div>
+          <div class="api-full d-flex justify-between align-center gap-12">
+            <div id="postMsg" class="w-100"></div>
+            <button type="submit" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Save Board</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="card mb-24">
+      <div class="card-header">
+        <div>
+          <div class="fw-700">Update Board</div>
+          <div class="api-endpoint">PUT /api/v1/boards/&lt;id&gt;/</div>
+        </div>
+        <span class="api-method put">PUT</span>
+      </div>
+      <div class="card-body">
+        <form id="putBoardForm" class="api-form-grid">
+          <div class="form-group">
+            <label class="form-label" for="putBoardId">Board ID</label>
+            <input type="number" class="form-control" id="putBoardId" required>
+            <div class="api-help">Use the ID from the board list.</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="putProjectId">Project ID</label>
+            <input type="number" class="form-control" id="putProjectId" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="putBoardName">Board Name</label>
+            <input type="text" class="form-control" id="putBoardName" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="putBoardPosition">Position</label>
+            <input type="number" class="form-control" id="putBoardPosition" value="0" min="0">
+          </div>
+          <div class="form-group api-full">
+            <label class="form-label" for="putBoardBackground">Background</label>
+            <input type="color" class="form-control" id="putBoardBackground" value="#1e293b">
+          </div>
+          <div class="api-full d-flex justify-between align-center gap-12">
+            <div id="putMsg" class="w-100"></div>
+            <button type="submit" class="btn btn-secondary"><i class="fa-solid fa-pen"></i> Update Board</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="fw-700 text-danger">Delete Board</div>
+          <div class="api-endpoint">DELETE /api/v1/boards/&lt;id&gt;/</div>
+        </div>
+        <span class="api-method delete">DELETE</span>
+      </div>
+      <div class="card-body">
+        <form id="deleteBoardForm" class="api-form-grid">
+          <div class="form-group api-full">
+            <label class="form-label" for="deleteBoardId">Board ID</label>
+            <input type="number" class="form-control" id="deleteBoardId" required>
+            <div class="api-help">Deleting a board also removes its lists and cards.</div>
+          </div>
+          <div class="api-full d-flex justify-between align-center gap-12">
+            <div id="deleteMsg" class="w-100"></div>
+            <button type="submit" class="btn btn-danger"><i class="fa-solid fa-trash"></i> Delete Board</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <div class="fw-700">Boards by Project</div>
+        <div class="text-small text-muted">Data from /api/v1/projects/&lt;id&gt;/boards/</div>
+      </div>
+      <button type="button" class="btn btn-secondary btn-sm" id="refreshBoards"><i class="fa-solid fa-rotate"></i> Refresh</button>
+    </div>
+    <div class="card-body">
+      <div class="form-group mb-16">
+        <label class="form-label" for="filterProjectId">Project ID</label>
+        <input type="number" class="form-control" id="filterProjectId" placeholder="Enter project ID">
+      </div>
+      <div id="boardsList" class="api-resource-list"></div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== "") {
+    const cookies = document.cookie.split(";");
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      if (cookie.substring(0, name.length + 1) === (name + "=")) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
+}
+const csrftoken = getCookie("csrftoken");
+function showMessage(elementId, type, message) {
+  document.getElementById(elementId).innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+}
+async function requestJson(url, options = {}) {
+  const res = await fetch(url, {
+    ...options,
+    credentials: "same-origin",
+    headers: { "Content-Type": "application/json", "X-CSRFToken": csrftoken, ...(options.headers || {}) }
+  });
+  const data = res.status === 204 ? null : await res.json().catch(() => null);
+  if (!res.ok) throw new Error(data ? JSON.stringify(data) : `HTTP ${res.status}`);
+  return data;
+}
+function escapeHtml(value) {
+  return String(value || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+}
+function boardListUrl(projectId) {
+  return `/api/v1/projects/${projectId}/boards/`;
+}
+async function loadBoards() {
+  const projectId = document.getElementById("filterProjectId").value || document.getElementById("postProjectId").value;
+  const list = document.getElementById("boardsList");
+  if (!projectId) {
+    list.innerHTML = '<div class="text-muted">Enter a project ID to load boards.</div>';
+    return;
+  }
+  const data = await requestJson(boardListUrl(projectId));
+  const boards = Array.isArray(data) ? data : data.results || [];
+  if (!boards.length) {
+    list.innerHTML = '<div class="text-muted">No boards found for this project.</div>';
+    return;
+  }
+  list.innerHTML = boards.map(board => `
+    <div class="api-resource-item">
+      <div class="d-flex justify-between align-center gap-8">
+        <div class="api-resource-name">ID ${board.id}: ${escapeHtml(board.name)}</div>
+        <div class="api-color-chip" style="background:${escapeHtml(board.background || "#1e293b")}"></div>
+      </div>
+      <div class="text-small text-muted">Project ${escapeHtml(board.project)} | Position ${escapeHtml(board.position)} | Lists ${escapeHtml(board.lists_count)}</div>
+    </div>
+  `).join("");
+}
+document.getElementById("postBoardForm").addEventListener("submit", async function(e) {
+  e.preventDefault();
+  const projectId = document.getElementById("postProjectId").value;
+  const payload = {
+    name: document.getElementById("postBoardName").value.trim(),
+    background: document.getElementById("postBoardBackground").value,
+    position: Number(document.getElementById("postBoardPosition").value || 0),
+    project: Number(projectId)
+  };
+  try {
+    const board = await requestJson(boardListUrl(projectId), { method: "POST", body: JSON.stringify(payload) });
+    showMessage("postMsg", "success", `Board created successfully. ID: ${board.id}`);
+    document.getElementById("filterProjectId").value = projectId;
+    this.reset();
+    document.getElementById("postBoardBackground").value = "#1e293b";
+    loadBoards();
+  } catch (err) {
+    showMessage("postMsg", "error", `Error: ${err.message}`);
+  }
+});
+document.getElementById("putBoardForm").addEventListener("submit", async function(e) {
+  e.preventDefault();
+  const boardId = document.getElementById("putBoardId").value;
+  const projectId = document.getElementById("putProjectId").value;
+  const payload = {
+    name: document.getElementById("putBoardName").value.trim(),
+    background: document.getElementById("putBoardBackground").value,
+    position: Number(document.getElementById("putBoardPosition").value || 0),
+    project: Number(projectId)
+  };
+  try {
+    const board = await requestJson(`/api/v1/boards/${boardId}/`, { method: "PUT", body: JSON.stringify(payload) });
+    showMessage("putMsg", "success", `Board updated successfully. ID: ${board.id}`);
+    document.getElementById("filterProjectId").value = projectId;
+    loadBoards();
+  } catch (err) {
+    showMessage("putMsg", "error", `Error: ${err.message}`);
+  }
+});
+document.getElementById("deleteBoardForm").addEventListener("submit", async function(e) {
+  e.preventDefault();
+  const boardId = document.getElementById("deleteBoardId").value;
+  if (!confirm(`Delete board ID ${boardId}?`)) return;
+  try {
+    await requestJson(`/api/v1/boards/${boardId}/`, { method: "DELETE" });
+    showMessage("deleteMsg", "success", `Deleted successfully. ID: ${boardId}`);
+    this.reset();
+    loadBoards();
+  } catch (err) {
+    showMessage("deleteMsg", "error", `Error: ${err.message}`);
+  }
+});
+document.getElementById("refreshBoards").addEventListener("click", loadBoards);
+document.getElementById("filterProjectId").addEventListener("change", loadBoards);
+loadBoards();
+</script>
+{% endblock %}

@@ -57,6 +57,14 @@
           <span class="nav-icon"><i class="fa-solid fa-code-branch"></i></span>
           Project API / API Project
         </a>
+        <a href="{% url 'admin_board_api' %}" class="nav-link {% if request.resolver_match.url_name == 'board_api_crud' or request.resolver_match.url_name == 'admin_board_api' %}active{% endif %}">
+          <span class="nav-icon"><i class="fa-solid fa-columns"></i></span>
+          Board API / API Board
+        </a>
+        <a href="{% url 'admin_card_api' %}" class="nav-link {% if request.resolver_match.url_name == 'card_api_crud' or request.resolver_match.url_name == 'admin_card_api' %}active{% endif %}">
+          <span class="nav-icon"><i class="fa-solid fa-note-sticky"></i></span>
+          Card API / API Card
+        </a>
         <a href="{% url 'admin_access_tokens' %}" class="nav-link {% if request.resolver_match.url_name == 'admin_access_tokens' %}active{% endif %}">
           <span class="nav-icon"><i class="fa-solid fa-key"></i></span>
           Access Tokens / សោចូលប្រើ
