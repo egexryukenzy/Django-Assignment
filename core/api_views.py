@@ -241,6 +241,15 @@ class CardListCreateAPIView(generics.ListCreateAPIView):
         CardAssignment.objects.get_or_create(card=card, user=self.request.user)
 
 
+class CardCreateAPIView(generics.CreateAPIView):
+    serializer_class = CardSerializer
+    queryset = Card.objects.all()
+
+    def perform_create(self, serializer):
+        card = serializer.save(created_by=self.request.user)
+        CardAssignment.objects.get_or_create(card=card, user=self.request.user)
+
+
 class CardDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = CardSerializer
     queryset = Card.objects.all()

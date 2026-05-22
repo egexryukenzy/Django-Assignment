@@ -34,6 +34,7 @@ urlpatterns = [
     path('lists/<int:list_id>/cards/',       api_views.CardListCreateAPIView.as_view(),  name='api_cards'),
 
     # ── Cards
+    path('cards/',                           api_views.CardCreateAPIView.as_view(),      name='api_card_create'),
     path('cards/<int:pk>/',                  api_views.CardDetailAPIView.as_view(),      name='api_card_detail'),
     path('cards/<int:pk>/move/',             api_views.CardMoveAPIView.as_view(),        name='api_card_move'),
     path('cards/<int:pk>/assign/',           api_views.CardAssignAPIView.as_view(),      name='api_card_assign'),

@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
 
 {% block title %}Card API{% endblock %}
+{% block body_class %}admin-crud-theme{% endblock %}
 {% block page_title %}Card API / POST PUT DELETE{% endblock %}
 
 {% block extra_head %}
@@ -28,13 +29,14 @@
 {% endblock %}
 
 {% block content %}
+<div class="admin-crud-page">
 <div class="api-shell">
   <div>
     <div class="card mb-24">
       <div class="card-header">
         <div>
           <div class="fw-700">Create Card</div>
-          <div class="api-endpoint">POST /api/v1/lists/&lt;list_id&gt;/cards/</div>
+          <div class="api-endpoint">POST /api/v1/cards/</div>
         </div>
         <span class="api-method post">POST</span>
       </div>
@@ -44,6 +46,7 @@
           <div class="form-group">
             <label class="form-label" for="postListId">List ID</label>
             <input type="number" class="form-control" id="postListId" required>
+            <div class="api-help">Use the ID from the list panel.</div>
           </div>
           <div class="form-group">
             <label class="form-label" for="postCardPriority">Priority</label>
@@ -57,6 +60,14 @@
           <div class="form-group api-full">
             <label class="form-label" for="postCardTitle">Card Title</label>
             <input type="text" class="form-control" id="postCardTitle" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="postCardStatus">Status</label>
+            <select class="form-control" id="postCardStatus">
+              <option value="todo" selected>To Do</option>
+              <option value="doing">Doing</option>
+              <option value="done">Done</option>
+            </select>
           </div>
           <div class="form-group">
             <label class="form-label" for="postCardDeadline">Deadline</label>
@@ -91,7 +102,6 @@
           <div class="form-group">
             <label class="form-label" for="putCardId">Card ID</label>
             <input type="number" class="form-control" id="putCardId" required>
-            <div class="api-help">Use the ID from the card list.</div>
           </div>
           <div class="form-group">
             <label class="form-label" for="putListId">List ID</label>
@@ -164,19 +174,23 @@
   <div class="card">
     <div class="card-header">
       <div>
-        <div class="fw-700">Cards by List</div>
-        <div class="text-small text-muted">Data from /api/v1/lists/&lt;id&gt;/cards/</div>
+        <div class="fw-700">IDs</div>
+        <div class="text-small text-muted">Click an ID to fill the forms.</div>
       </div>
-      <button type="button" class="btn btn-secondary btn-sm" id="refreshCards"><i class="fa-solid fa-rotate"></i> Refresh</button>
+      <button type="button" class="btn btn-secondary btn-sm" id="refreshLists"><i class="fa-solid fa-rotate"></i> Refresh</button>
     </div>
     <div class="card-body">
-      <div class="form-group mb-16">
-        <label class="form-label" for="filterListId">List ID</label>
-        <input type="number" class="form-control" id="filterListId" placeholder="Enter list ID">
+      <div class="api-panel-section">
+        <div class="api-panel-title">Card ID</div>
+        <div id="cardsList" class="api-resource-list"></div>
       </div>
-      <div id="cardsList" class="api-resource-list"></div>
+      <div>
+        <div class="api-panel-title">List ID by Board</div>
+        <div id="listsList"></div>
+      </div>
     </div>
   </div>
+</div>
 </div>
 {% endblock %}
 
@@ -200,6 +214,9 @@ const csrftoken = getCookie("csrftoken");
 function showMessage(elementId, type, message) {
   document.getElementById(elementId).innerHTML = `<div class="alert alert-${type}">${message}</div>`;
 }
+function escapeHtml(value) {
+  return String(value || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+}
 async function requestJson(url, options = {}) {
   const res = await fetch(url, {
     ...options,
@@ -210,61 +227,145 @@ async function requestJson(url, options = {}) {
   if (!res.ok) throw new Error(data ? JSON.stringify(data) : `HTTP ${res.status}`);
   return data;
 }
-function escapeHtml(value) {
-  return String(value || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+function listUrl(boardId) {
+  return `/api/v1/boards/${boardId}/lists/`;
 }
-function cardListUrl(listId) {
+function cardsUrl(listId) {
   return `/api/v1/lists/${listId}/cards/`;
 }
-function cardPayload(prefix, includeStatus) {
+function setInputValue(id, value) {
+  const el = document.getElementById(id);
+  if (el) el.value = value == null ? "" : value;
+}
+function selectListId(listId) {
+  setInputValue("postListId", listId);
+  setInputValue("putListId", listId);
+}
+function selectCard(card) {
+  setInputValue("putCardId", card.id);
+  setInputValue("deleteCardId", card.id);
+  setInputValue("putListId", card.list);
+  setInputValue("putCardTitle", card.title);
+  setInputValue("putCardPriority", card.priority);
+  setInputValue("putCardStatus", card.status);
+  setInputValue("putCardDeadline", card.deadline || "");
+  setInputValue("putCardPosition", card.position || 0);
+  setInputValue("putCardDescription", card.description || "");
+}
+async function loadWorkspaceIds() {
+  const list = document.getElementById("listsList");
+  const cardsList = document.getElementById("cardsList");
+  list.innerHTML = '<div class="text-muted">Loading list IDs...</div>';
+  cardsList.innerHTML = '<div class="text-muted">Loading card IDs...</div>';
+  try {
+    const projectsData = await requestJson("/api/v1/projects/");
+    const projects = Array.isArray(projectsData) ? projectsData : projectsData.results || [];
+    const boardGroups = await Promise.all(projects.map(async project => {
+      const boardsData = await requestJson(`/api/v1/projects/${project.id}/boards/`);
+      const boards = Array.isArray(boardsData) ? boardsData : boardsData.results || [];
+      return { project, boards };
+    }));
+    const boards = boardGroups.flatMap(group => group.boards.map(board => ({ ...board, project_name: group.project.name })));
+    const listGroups = await Promise.all(boards.map(async board => {
+      const listsData = await requestJson(listUrl(board.id));
+      const lists = Array.isArray(listsData) ? listsData : listsData.results || [];
+      return { board, lists };
+    }));
+    const allLists = listGroups.flatMap(group => group.lists.map(item => ({ ...item, board_name: group.board.name, project_name: group.board.project_name })));
+    if (!allLists.length) {
+      list.innerHTML = '<div class="text-muted">No list IDs found.</div>';
+      cardsList.innerHTML = '<div class="text-muted">No card IDs found.</div>';
+      return;
+    }
+    list.innerHTML = `
+      <select class="form-control" id="listSelect">
+        <option value="">Choose list ID</option>
+        ${listGroups.map(group => `
+          <optgroup label="Board ${escapeHtml(group.board.id)} - ${escapeHtml(group.board.name)}">
+            ${group.lists.map(item => `<option value="${escapeHtml(item.id)}">List ID ${escapeHtml(item.id)} - ${escapeHtml(item.title)} (${escapeHtml(item.cards_count)} cards)</option>`).join("")}
+          </optgroup>
+        `).join("")}
+      </select>
+    `;
+    const listSelect = document.getElementById("listSelect");
+    listSelect.addEventListener("change", () => selectListId(listSelect.value));
+    if (allLists.length) {
+      listSelect.value = String(allLists[0].id);
+      selectListId(allLists[0].id);
+    }
+    const cardGroups = await Promise.all(allLists.map(async item => {
+      const cardsData = await requestJson(cardsUrl(item.id));
+      const cards = Array.isArray(cardsData) ? cardsData : cardsData.results || [];
+      return { list: item, cards };
+    }));
+    const allCards = cardGroups.flatMap(group => group.cards.map(card => ({ ...card, board_name: group.list.board_name })));
+    if (!allCards.length) {
+      cardsList.innerHTML = '<div class="text-muted">No card IDs found.</div>';
+      return;
+    }
+    cardsList.innerHTML = allCards.map(card => `
+      <div class="api-resource-item" data-card-id="${escapeHtml(card.id)}">
+        <div class="d-flex justify-between align-center gap-8">
+          <div class="api-resource-name">Card ID ${escapeHtml(card.id)}</div>
+          <span class="badge badge-${escapeHtml(card.priority)}">${escapeHtml(card.priority)}</span>
+        </div>
+        <div class="text-small text-muted">${escapeHtml(card.title)} | List ${escapeHtml(card.list)} | ${escapeHtml(card.board_name)}</div>
+        <div class="api-row-actions">
+          <button type="button" class="btn btn-warning" data-action="edit" data-card-id="${escapeHtml(card.id)}">
+            <i class="fa-solid fa-pen"></i> Edit
+          </button>
+          <button type="button" class="btn btn-danger" data-action="delete" data-card-id="${escapeHtml(card.id)}">
+            <i class="fa-solid fa-trash"></i> Delete
+          </button>
+        </div>
+      </div>
+    `).join("");
+    cardsList.querySelectorAll("[data-action]").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        const card = allCards.find(item => String(item.id) === btn.dataset.cardId);
+        if (!card) return;
+        selectCard(card);
+        if (btn.dataset.action === "delete") {
+          if (!confirm(`Delete card ID ${card.id}?`)) return;
+          try {
+            await requestJson(`/api/v1/cards/${card.id}/`, { method: "DELETE" });
+            showMessage("deleteMsg", "success", `Deleted successfully. ID: ${card.id}`);
+            loadWorkspaceIds();
+          } catch (err) {
+            showMessage("deleteMsg", "error", `Error: ${err.message}`);
+          }
+          return;
+        }
+        document.getElementById("putCardForm").scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    });
+  } catch (err) {
+    list.innerHTML = `<div class="alert alert-error">Error: ${escapeHtml(err.message)}</div>`;
+    cardsList.innerHTML = `<div class="alert alert-error">Error: ${escapeHtml(err.message)}</div>`;
+  }
+}
+function cardPayload(prefix) {
   const deadline = document.getElementById(`${prefix}CardDeadline`).value;
-  const listId = document.getElementById(`${prefix}ListId`).value;
-  const payload = {
+  return {
     title: document.getElementById(`${prefix}CardTitle`).value.trim(),
     description: document.getElementById(`${prefix}CardDescription`).value.trim(),
     priority: document.getElementById(`${prefix}CardPriority`).value,
+    status: document.getElementById(`${prefix}CardStatus`).value,
     deadline: deadline || null,
     position: Number(document.getElementById(`${prefix}CardPosition`).value || 0),
-    list: Number(listId)
+    list: Number(document.getElementById(`${prefix}ListId`).value)
   };
-  if (includeStatus) payload.status = document.getElementById(`${prefix}CardStatus`).value;
-  return payload;
-}
-async function loadCards() {
-  const listId = document.getElementById("filterListId").value || document.getElementById("postListId").value;
-  const list = document.getElementById("cardsList");
-  if (!listId) {
-    list.innerHTML = '<div class="text-muted">Enter a list ID to load cards.</div>';
-    return;
-  }
-  const data = await requestJson(cardListUrl(listId));
-  const cards = Array.isArray(data) ? data : data.results || [];
-  if (!cards.length) {
-    list.innerHTML = '<div class="text-muted">No cards found for this list.</div>';
-    return;
-  }
-  list.innerHTML = cards.map(card => `
-    <div class="api-resource-item">
-      <div class="d-flex justify-between align-center gap-8">
-        <div class="api-resource-name">ID ${card.id}: ${escapeHtml(card.title)}</div>
-        <span class="badge badge-${escapeHtml(card.status)}">${escapeHtml(card.status)}</span>
-      </div>
-      <div class="text-small text-muted">${escapeHtml(card.description || "No description")}</div>
-      <div class="text-small text-muted">Priority ${escapeHtml(card.priority)} | List ${escapeHtml(card.list)} | Deadline ${escapeHtml(card.deadline || "-")}</div>
-    </div>
-  `).join("");
 }
 document.getElementById("postCardForm").addEventListener("submit", async function(e) {
   e.preventDefault();
-  const listId = document.getElementById("postListId").value;
   try {
-    const card = await requestJson(cardListUrl(listId), { method: "POST", body: JSON.stringify(cardPayload("post", false)) });
+    const card = await requestJson("/api/v1/cards/", { method: "POST", body: JSON.stringify(cardPayload("post")) });
     showMessage("postMsg", "success", `Card created successfully. ID: ${card.id}`);
-    document.getElementById("filterListId").value = listId;
     this.reset();
     document.getElementById("postCardPriority").value = "medium";
+    document.getElementById("postCardStatus").value = "todo";
     document.getElementById("postCardPosition").value = "0";
-    loadCards();
+    loadWorkspaceIds();
   } catch (err) {
     showMessage("postMsg", "error", `Error: ${err.message}`);
   }
@@ -272,12 +373,10 @@ document.getElementById("postCardForm").addEventListener("submit", async functio
 document.getElementById("putCardForm").addEventListener("submit", async function(e) {
   e.preventDefault();
   const cardId = document.getElementById("putCardId").value;
-  const listId = document.getElementById("putListId").value;
   try {
-    const card = await requestJson(`/api/v1/cards/${cardId}/`, { method: "PUT", body: JSON.stringify(cardPayload("put", true)) });
+    const card = await requestJson(`/api/v1/cards/${cardId}/`, { method: "PUT", body: JSON.stringify(cardPayload("put")) });
     showMessage("putMsg", "success", `Card updated successfully. ID: ${card.id}`);
-    document.getElementById("filterListId").value = listId;
-    loadCards();
+    loadWorkspaceIds();
   } catch (err) {
     showMessage("putMsg", "error", `Error: ${err.message}`);
   }
@@ -290,13 +389,12 @@ document.getElementById("deleteCardForm").addEventListener("submit", async funct
     await requestJson(`/api/v1/cards/${cardId}/`, { method: "DELETE" });
     showMessage("deleteMsg", "success", `Deleted successfully. ID: ${cardId}`);
     this.reset();
-    loadCards();
+    loadWorkspaceIds();
   } catch (err) {
     showMessage("deleteMsg", "error", `Error: ${err.message}`);
   }
 });
-document.getElementById("refreshCards").addEventListener("click", loadCards);
-document.getElementById("filterListId").addEventListener("change", loadCards);
-loadCards();
+document.getElementById("refreshLists").addEventListener("click", loadWorkspaceIds);
+loadWorkspaceIds();
 </script>
 {% endblock %}

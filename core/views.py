@@ -968,13 +968,13 @@ def admin_api_docs(request):
                 {'method': 'PUT',    'url': '/api/v1/lists/<id>/',       'desc': 'Update list'},
                 {'method': 'DELETE', 'url': '/api/v1/lists/<id>/',       'desc': 'Delete list'},
                 {'method': 'GET',    'url': '/api/v1/lists/<id>/cards/', 'desc': 'Get all cards in list'},
-                {'method': 'POST',   'url': '/api/v1/lists/<id>/cards/', 'desc': 'Create card in list'},
             ]
         },
         {
             'title': 'Cards / កាត',
             'icon': 'square-check',
             'endpoints': [
+                {'method': 'POST',   'url': '/api/v1/cards/',                  'desc': 'Create card'},
                 {'method': 'GET',    'url': '/api/v1/cards/<id>/',             'desc': 'Get card detail'},
                 {'method': 'PUT',    'url': '/api/v1/cards/<id>/',             'desc': 'Update card'},
                 {'method': 'DELETE', 'url': '/api/v1/cards/<id>/',             'desc': 'Delete card'},

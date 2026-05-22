@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
 
 {% block title %}Board API{% endblock %}
+{% block body_class %}admin-crud-theme{% endblock %}
 {% block page_title %}Board API / POST PUT DELETE{% endblock %}
 
 {% block extra_head %}
@@ -29,6 +30,7 @@
 {% endblock %}
 
 {% block content %}
+<div class="admin-crud-page">
 <div class="api-shell">
   <div>
     <div class="card mb-24">
@@ -132,19 +134,23 @@
   <div class="card">
     <div class="card-header">
       <div>
-        <div class="fw-700">Boards by Project</div>
-        <div class="text-small text-muted">Data from /api/v1/projects/&lt;id&gt;/boards/</div>
+        <div class="fw-700">IDs</div>
+        <div class="text-small text-muted">Click an ID to fill the forms.</div>
       </div>
       <button type="button" class="btn btn-secondary btn-sm" id="refreshBoards"><i class="fa-solid fa-rotate"></i> Refresh</button>
     </div>
     <div class="card-body">
-      <div class="form-group mb-16">
-        <label class="form-label" for="filterProjectId">Project ID</label>
-        <input type="number" class="form-control" id="filterProjectId" placeholder="Enter project ID">
+      <div class="api-panel-section">
+        <div class="api-panel-title">Project ID</div>
+        <div id="projectsList" class="api-resource-list"></div>
       </div>
-      <div id="boardsList" class="api-resource-list"></div>
+      <div>
+        <div class="api-panel-title">Board ID by Project</div>
+        <div id="boardsList"></div>
+      </div>
     </div>
   </div>
+</div>
 </div>
 {% endblock %}
 
@@ -184,28 +190,108 @@ function escapeHtml(value) {
 function boardListUrl(projectId) {
   return `/api/v1/projects/${projectId}/boards/`;
 }
+function fillBoardForm(board) {
+  document.getElementById("putBoardId").value = board.id;
+  document.getElementById("deleteBoardId").value = board.id;
+  document.getElementById("putProjectId").value = board.project;
+  document.getElementById("putBoardName").value = board.name || "";
+  document.getElementById("putBoardPosition").value = board.position || 0;
+  document.getElementById("putBoardBackground").value = board.background || "#1e293b";
+}
 async function loadBoards() {
-  const projectId = document.getElementById("filterProjectId").value || document.getElementById("postProjectId").value;
   const list = document.getElementById("boardsList");
-  if (!projectId) {
-    list.innerHTML = '<div class="text-muted">Enter a project ID to load boards.</div>';
+  const projectsList = document.getElementById("projectsList");
+  list.innerHTML = '<div class="text-muted">Loading board IDs...</div>';
+  projectsList.innerHTML = '<div class="text-muted">Loading project IDs...</div>';
+  const projectsData = await requestJson("/api/v1/projects/");
+  const projects = Array.isArray(projectsData) ? projectsData : projectsData.results || [];
+  if (!projects.length) {
+    projectsList.innerHTML = '<div class="text-muted">No project IDs found.</div>';
+    list.innerHTML = '<div class="text-muted">No board IDs found.</div>';
     return;
   }
-  const data = await requestJson(boardListUrl(projectId));
-  const boards = Array.isArray(data) ? data : data.results || [];
-  if (!boards.length) {
-    list.innerHTML = '<div class="text-muted">No boards found for this project.</div>';
-    return;
-  }
-  list.innerHTML = boards.map(board => `
-    <div class="api-resource-item">
-      <div class="d-flex justify-between align-center gap-8">
-        <div class="api-resource-name">ID ${board.id}: ${escapeHtml(board.name)}</div>
-        <div class="api-color-chip" style="background:${escapeHtml(board.background || "#1e293b")}"></div>
-      </div>
-      <div class="text-small text-muted">Project ${escapeHtml(board.project)} | Position ${escapeHtml(board.position)} | Lists ${escapeHtml(board.lists_count)}</div>
-    </div>
+  projectsList.innerHTML = projects.map(project => `
+    <button type="button" class="api-resource-item api-id-button" data-project-id="${escapeHtml(project.id)}">
+      <div class="api-resource-name">Project ID ${escapeHtml(project.id)}</div>
+      <div class="text-small text-muted">${escapeHtml(project.name)}</div>
+    </button>
   `).join("");
+  projectsList.querySelectorAll("[data-project-id]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.getElementById("postProjectId").value = btn.dataset.projectId;
+      document.getElementById("putProjectId").value = btn.dataset.projectId;
+    });
+  });
+  const boardGroups = await Promise.all(projects.map(async project => {
+    const data = await requestJson(boardListUrl(project.id));
+    const boards = Array.isArray(data) ? data : data.results || [];
+    return { project, boards };
+  }));
+  const boards = boardGroups.flatMap(group => group.boards.map(board => ({ ...board, project_name: group.project.name })));
+  if (!boards.length) {
+    list.innerHTML = '<div class="text-muted">No board IDs found.</div>';
+    return;
+  }
+  list.innerHTML = `
+    <div class="api-select-panel">
+      <select class="form-control" id="boardSelect">
+        <option value="">Choose board ID</option>
+        ${boards.map(board => `<option value="${escapeHtml(board.id)}">Board ID ${escapeHtml(board.id)} - ${escapeHtml(board.name)} (${escapeHtml(board.project_name)})</option>`).join("")}
+      </select>
+    </div>
+    <div id="selectedBoardPanel" class="api-resource-list"></div>
+  `;
+  const boardSelect = document.getElementById("boardSelect");
+  const selectedBoardPanel = document.getElementById("selectedBoardPanel");
+  function renderSelectedBoard() {
+    const board = boards.find(item => String(item.id) === boardSelect.value);
+    if (!board) {
+      selectedBoardPanel.innerHTML = '<div class="text-muted">Select a board to edit or delete.</div>';
+      return;
+    }
+    selectedBoardPanel.innerHTML = `
+      <div class="api-resource-item">
+        <div class="d-flex justify-between align-center gap-8">
+          <div class="api-resource-name">Board ID ${escapeHtml(board.id)}: ${escapeHtml(board.name)}</div>
+          <div class="api-color-chip" style="background:${escapeHtml(board.background || "#1e293b")}"></div>
+        </div>
+        <div class="text-small text-muted">Project ${escapeHtml(board.project)} - ${escapeHtml(board.project_name)} | Position ${escapeHtml(board.position)} | Lists ${escapeHtml(board.lists_count)}</div>
+        <div class="api-row-actions">
+          <button type="button" class="btn btn-warning" id="editSelectedBoard"><i class="fa-solid fa-pen"></i> Edit</button>
+          <button type="button" class="btn btn-danger" id="deleteSelectedBoard"><i class="fa-solid fa-trash"></i> Delete</button>
+        </div>
+      </div>
+    `;
+    document.getElementById("editSelectedBoard").addEventListener("click", () => {
+      fillBoardForm(board);
+      document.getElementById("putBoardForm").scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+    document.getElementById("deleteSelectedBoard").addEventListener("click", async () => {
+      fillBoardForm(board);
+      if (!confirm(`Delete board ID ${board.id}?`)) return;
+      try {
+        await requestJson(`/api/v1/boards/${board.id}/`, { method: "DELETE" });
+        showMessage("deleteMsg", "success", `Deleted successfully. ID: ${board.id}`);
+        loadBoards();
+      } catch (err) {
+        showMessage("deleteMsg", "error", `Error: ${err.message}`);
+      }
+    });
+  }
+  boardSelect.addEventListener("change", renderSelectedBoard);
+  if (boards.length) {
+    boardSelect.value = String(boards[0].id);
+    renderSelectedBoard();
+  }
+  document.querySelectorAll("[data-project-id]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const firstBoard = boards.find(board => String(board.project) === btn.dataset.projectId);
+      if (firstBoard) {
+        boardSelect.value = String(firstBoard.id);
+        renderSelectedBoard();
+      }
+    });
+  });
 }
 document.getElementById("postBoardForm").addEventListener("submit", async function(e) {
   e.preventDefault();
@@ -219,7 +305,6 @@ document.getElementById("postBoardForm").addEventListener("submit", async functi
   try {
     const board = await requestJson(boardListUrl(projectId), { method: "POST", body: JSON.stringify(payload) });
     showMessage("postMsg", "success", `Board created successfully. ID: ${board.id}`);
-    document.getElementById("filterProjectId").value = projectId;
     this.reset();
     document.getElementById("postBoardBackground").value = "#1e293b";
     loadBoards();
@@ -240,7 +325,6 @@ document.getElementById("putBoardForm").addEventListener("submit", async functio
   try {
     const board = await requestJson(`/api/v1/boards/${boardId}/`, { method: "PUT", body: JSON.stringify(payload) });
     showMessage("putMsg", "success", `Board updated successfully. ID: ${board.id}`);
-    document.getElementById("filterProjectId").value = projectId;
     loadBoards();
   } catch (err) {
     showMessage("putMsg", "error", `Error: ${err.message}`);
@@ -260,7 +344,6 @@ document.getElementById("deleteBoardForm").addEventListener("submit", async func
   }
 });
 document.getElementById("refreshBoards").addEventListener("click", loadBoards);
-document.getElementById("filterProjectId").addEventListener("change", loadBoards);
 loadBoards();
 </script>
 {% endblock %}

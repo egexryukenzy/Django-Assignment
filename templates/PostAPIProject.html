@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
 
 {% block title %}Project API{% endblock %}
+{% block body_class %}admin-crud-theme{% endblock %}
 {% block page_title %}Project API / POST PUT DELETE{% endblock %}
 
 {% block extra_head %}
@@ -89,6 +90,7 @@
 {% endblock %}
 
 {% block content %}
+<div class="admin-crud-page">
 <div class="api-shell">
   <div>
     <div class="card mb-24">
@@ -216,6 +218,7 @@
     </div>
   </div>
 </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
@@ -281,14 +284,46 @@ async function loadProjects() {
   }
 
   list.innerHTML = projects.map(project => `
-    <div class="api-project-item">
+    <div class="api-project-item" data-project-id="${project.id}">
       <div class="d-flex justify-between align-center gap-8">
         <div class="api-project-name">ID ${project.id}: ${escapeHtml(project.name)}</div>
         <span class="badge badge-${escapeHtml(project.status)}">${escapeHtml(project.status)}</span>
       </div>
       <div class="text-small text-muted">${escapeHtml(project.description || "No description")}</div>
+      <div class="api-row-actions">
+        <button type="button" class="btn btn-warning" data-action="edit" data-project-id="${project.id}">
+          <i class="fa-solid fa-pen"></i> Edit
+        </button>
+        <button type="button" class="btn btn-danger" data-action="delete" data-project-id="${project.id}">
+          <i class="fa-solid fa-trash"></i> Delete
+        </button>
+      </div>
     </div>
   `).join("");
+  list.querySelectorAll("[data-action]").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const project = projects.find(item => String(item.id) === btn.dataset.projectId);
+      if (!project) return;
+      if (btn.dataset.action === "delete") {
+        document.getElementById("deleteProjectId").value = project.id;
+        if (!confirm(`Delete project ID ${project.id}?`)) return;
+        try {
+          await requestJson(`${PROJECT_API}${project.id}/`, { method: "DELETE" });
+          showMessage("deleteMsg", "success", `Deleted successfully. ID: ${project.id}`);
+          loadProjects();
+        } catch (err) {
+          showMessage("deleteMsg", "error", `Error: ${err.message}`);
+        }
+        return;
+      }
+      document.getElementById("putProjectId").value = project.id;
+      document.getElementById("deleteProjectId").value = project.id;
+      document.getElementById("putProjectName").value = project.name || "";
+      document.getElementById("putProjectDescription").value = project.description || "";
+      document.getElementById("putProjectStatus").value = ["active", "completed"].includes(project.status) ? project.status : "active";
+      document.getElementById("putProjectForm").scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  });
 }
 
 document.getElementById("postProjectForm").addEventListener("submit", async function(e) {

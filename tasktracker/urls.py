@@ -22,7 +22,7 @@ urlpatterns = [
     path('admin-panel/project-api/', views.project_api_crud, name='admin_project_api'),
     path('api/PostAPIBoard/', views.board_api_crud, name='board_api_crud'),
     path('admin-panel/board-api/', views.board_api_crud, name='admin_board_api'),
-    path('api/PostAPICard/', views.card_api_crud, name='card_api_crud'),
+    path('api/card/', views.card_api_crud, name='card_api_crud'),
     path('admin-panel/card-api/', views.card_api_crud, name='admin_card_api'),
 
     # Projects
