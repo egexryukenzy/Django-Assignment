@@ -3,7 +3,7 @@ import json
 from django.test import TestCase
 from django.urls import reverse
 
-from .models import Board, Card, CardAssignment, List, Project, ProjectMember, User
+from .models import AccessToken, Board, Card, CardAssignment, List, Project, ProjectMember, User
 
 
 class BoardLeaderWorkflowTests(TestCase):
@@ -196,3 +196,38 @@ class BoardLeaderWorkflowTests(TestCase):
         self.assertNotContains(response, hidden_doing.title)
         self.assertNotContains(response, "Add card")
         self.assertNotContains(response, "Add List")
+
+    def test_api_requires_admin_access_token_for_browser_session(self):
+        self.login(self.member)
+
+        response = self.client.get("/api/v1/projects/")
+        self.assertEqual(response.status_code, 403)
+
+        access_token = AccessToken.objects.create(
+            company_name="Test Company",
+            token="admin-access-token",
+            expire_date="2099-01-01",
+        )
+        response = self.client.get(
+            "/api/v1/projects/",
+            {"token": access_token.token},
+        )
+        self.assertEqual(response.status_code, 200)
+
+    def test_member_api_docs_show_only_get_project_board_card_endpoints(self):
+        self.login(self.member)
+
+        response = self.client.get(reverse("member_api_docs"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Member API Documentation")
+        self.assertContains(response, "/api/v1/projects/")
+        self.assertContains(response, "/api/v1/projects/&lt;id&gt;/boards/")
+        self.assertContains(response, "/api/v1/boards/&lt;id&gt;/lists/")
+        self.assertContains(response, "/api/v1/lists/&lt;id&gt;/cards/")
+        self.assertContains(response, "/api/v1/cards/&lt;id&gt;/")
+        self.assertNotContains(response, "/api/v1/auth/")
+        self.assertNotContains(response, "/api/v1/users/")
+        self.assertNotContains(response, ">POST</span>")
+        self.assertNotContains(response, ">PUT</span>")
+        self.assertNotContains(response, ">DELETE</span>")

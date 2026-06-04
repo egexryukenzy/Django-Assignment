@@ -53,7 +53,7 @@ class LoginAPIView(APIView):
 
 
 class LogoutAPIView(APIView):
-    permission_classes = [permissions.IsAuthenticated]  # ← FIXED
+    permission_classes = [permissions.IsAuthenticated, HasAccessToken]
 
     def post(self, request):
         request.user.auth_token.delete()
@@ -61,7 +61,7 @@ class LogoutAPIView(APIView):
 
 
 class MeAPIView(APIView):
-    permission_classes = [permissions.IsAuthenticated]  # ← FIXED
+    permission_classes = [permissions.IsAuthenticated, HasAccessToken]
 
     def get(self, request):
         return Response(UserSerializer(request.user).data)
@@ -102,7 +102,7 @@ class UserDetailAPIView(generics.RetrieveUpdateAPIView):
 # ─── PROJECTS ─────────────────────────────────────────────────────────────────
 
 class ProjectListCreateAPIView(generics.ListCreateAPIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasAccessToken]
     serializer_class = ProjectSerializer
 
     def get_queryset(self):
@@ -127,7 +127,7 @@ class ProjectListCreateAPIView(generics.ListCreateAPIView):
 
 
 class ProjectDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasAccessToken]
     serializer_class = ProjectSerializer
 
     def get_queryset(self):

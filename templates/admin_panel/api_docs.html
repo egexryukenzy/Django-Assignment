@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
-{% block title %}API Documentation{% endblock %}
-{% block page_title %}API Documentation / ឯកសារ API{% endblock %}
+{% block title %}{{ docs_title|default:"API Documentation" }}{% endblock %}
+{% block page_title %}{{ docs_title|default:"API Documentation" }} / ឯកសារ API{% endblock %}
 {% block content %}
 
 <style>
@@ -74,7 +74,9 @@
 <div class="auth-note">
   <i class="fa-solid fa-key" style="color:var(--yellow)"></i>
   All endpoints (except login &amp; register) require header:
-  <code>Authorization: Token &lt;your_token&gt;</code>
+  <code>X-ACCESS-TOKEN: &lt;admin_access_token&gt;</code>
+  or URL:
+  <code>?token=&lt;admin_access_token&gt;</code>
 </div>
 
 {% for section in api_sections %}

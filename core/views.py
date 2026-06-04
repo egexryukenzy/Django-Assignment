@@ -5,6 +5,7 @@ from django.contrib import messages
 from django.http import JsonResponse
 from django.db.models import Prefetch, Q
 from django.views.decorators.http import require_POST
+from django.utils import timezone
 import json
 
 
@@ -200,11 +201,20 @@ def dashboard(request):
 def project_api_crud(request):
     if not (request.user.is_admin or request.user.is_staff or request.user.is_superuser):
         return redirect("dashboard")
+    from .models import AccessToken
+
+    access_token = AccessToken.objects.filter(
+        is_active=True,
+        expire_date__gte=timezone.now().date(),
+    ).order_by("-id").first()
 
     return render(
         request,
         "PostAPIProject.html",
-        {"unread_count": request.user.notifications.filter(is_read=False).count()},
+        {
+            "api_access_token": access_token.token if access_token else "",
+            "unread_count": request.user.notifications.filter(is_read=False).count(),
+        },
     )
 
 
@@ -212,11 +222,20 @@ def project_api_crud(request):
 def board_api_crud(request):
     if not (request.user.is_admin or request.user.is_staff or request.user.is_superuser):
         return redirect("dashboard")
+    from .models import AccessToken
+
+    access_token = AccessToken.objects.filter(
+        is_active=True,
+        expire_date__gte=timezone.now().date(),
+    ).order_by("-id").first()
 
     return render(
         request,
         "PostAPIBoard.html",
-        {"unread_count": request.user.notifications.filter(is_read=False).count()},
+        {
+            "api_access_token": access_token.token if access_token else "",
+            "unread_count": request.user.notifications.filter(is_read=False).count(),
+        },
     )
 
 
@@ -894,6 +913,49 @@ def profile(request):
     }
     return render(request, "profile.html", context)
 
+@login_required
+def member_api_docs(request):
+    api_sections = [
+        {
+            'title': 'Projects / គម្រោង',
+            'icon': 'folder-open',
+            'endpoints': [
+                {'method': 'GET', 'url': '/api/v1/projects/',              'desc': 'List your accessible projects'},
+                {'method': 'GET', 'url': '/api/v1/projects/<id>/',         'desc': 'Get project detail'},
+                {'method': 'GET', 'url': '/api/v1/projects/<id>/members/', 'desc': 'List project members'},
+                {'method': 'GET', 'url': '/api/v1/projects/<id>/boards/',  'desc': 'List boards in project'},
+                {'method': 'GET', 'url': '/api/v1/projects/<id>/labels/',  'desc': 'List labels in project'},
+            ]
+        },
+        {
+            'title': 'Boards / បន្ទះ',
+            'icon': 'table-columns',
+            'endpoints': [
+                {'method': 'GET', 'url': '/api/v1/boards/<id>/',       'desc': 'Get board detail'},
+                {'method': 'GET', 'url': '/api/v1/boards/<id>/lists/', 'desc': 'List all lists in board'},
+                {'method': 'GET', 'url': '/api/v1/lists/<id>/',        'desc': 'Get list detail'},
+            ]
+        },
+        {
+            'title': 'Cards / កាត',
+            'icon': 'square-check',
+            'endpoints': [
+                {'method': 'GET', 'url': '/api/v1/lists/<id>/cards/',       'desc': 'Get all cards in list'},
+                {'method': 'GET', 'url': '/api/v1/cards/<id>/',             'desc': 'Get card detail'},
+                {'method': 'GET', 'url': '/api/v1/cards/<id>/comments/',    'desc': 'Get comments on card'},
+                {'method': 'GET', 'url': '/api/v1/cards/<id>/attachments/', 'desc': 'Get attachments on card'},
+            ]
+        },
+    ]
+
+    return render(request, 'admin_panel/api_docs.html', {
+        'docs_title': 'Member API Documentation',
+        'api_sections': api_sections,
+        'unread_count': request.user.notifications.filter(is_read=False).count(),
+    })
+
+
+@login_required
 def admin_api_docs(request):
     if not request.user.is_admin:
         return redirect('dashboard')
@@ -1163,8 +1225,13 @@ def admin_access_tokens(request):
         return redirect('dashboard')
     from .models import AccessToken
     tokens = AccessToken.objects.all().order_by('-id')
+    today = timezone.now().date()
     return render(request, 'admin_panel/access_tokens.html', {
         'tokens': tokens,
+        'active_count': tokens.filter(is_active=True, expire_date__gte=today).count(),
+        'inactive_count': tokens.filter(is_active=False).count(),
+        'expired_count': tokens.filter(expire_date__lt=today).count(),
+        'today': today,
         'unread_count': request.user.notifications.filter(is_read=False).count(),
     })
 

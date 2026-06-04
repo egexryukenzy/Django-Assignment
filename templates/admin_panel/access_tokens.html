@@ -1,70 +1,347 @@
 {% extends 'base.html' %}
 {% block title %}Access Tokens{% endblock %}
+{% block page_title %}Access Tokens / សោចូលប្រើ API{% endblock %}
+
+{% block extra_head %}
+<style>
+  .token-toolbar {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .token-title {
+    font-size: 22px;
+    font-weight: 800;
+    margin-bottom: 4px;
+  }
+
+  .token-subtitle {
+    color: var(--text-muted);
+    font-size: 13px;
+  }
+
+  .token-summary {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .token-stat {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .token-stat::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 3px;
+  }
+
+  .token-stat.active::before { background: var(--green); }
+  .token-stat.expired::before { background: var(--yellow); }
+  .token-stat.inactive::before { background: var(--red); }
+
+  .token-stat-value {
+    font-size: 28px;
+    font-weight: 800;
+    line-height: 1;
+  }
+
+  .token-stat-label {
+    color: var(--text-muted);
+    font-size: 12px;
+    margin-top: 6px;
+  }
+
+  .token-help {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(280px, .85fr);
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .token-help-list {
+    display: grid;
+    gap: 10px;
+    color: var(--text-muted);
+    font-size: 13px;
+  }
+
+  .token-help-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .token-help-item i {
+    color: var(--accent);
+    margin-top: 3px;
+    width: 16px;
+  }
+
+  .token-code {
+    background: var(--bg-dark);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    font-family: Consolas, Monaco, monospace;
+    font-size: 12px;
+    color: var(--text-primary);
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  .token-value {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    max-width: 420px;
+    background: var(--bg-dark);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-family: Consolas, Monaco, monospace;
+    font-size: 12px;
+    cursor: pointer;
+  }
+
+  .token-value span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .token-copy {
+    color: var(--text-muted);
+    flex: 0 0 auto;
+  }
+
+  .token-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .token-empty {
+    text-align: center;
+    padding: 44px 20px;
+    color: var(--text-muted);
+  }
+
+  .token-empty i {
+    display: block;
+    font-size: 30px;
+    color: var(--text-faint);
+    margin-bottom: 10px;
+  }
+
+  .btn-warning {
+    background: rgba(210,153,34,.15);
+    border: 1px solid rgba(210,153,34,.3);
+    color: var(--yellow);
+  }
+
+  .btn-warning:hover {
+    background: rgba(210,153,34,.25);
+  }
+
+  .btn-success {
+    background: rgba(46,160,67,.15);
+    border: 1px solid rgba(46,160,67,.3);
+    color: var(--green);
+  }
+
+  .btn-success:hover {
+    background: rgba(46,160,67,.25);
+  }
+
+  @media (max-width: 1000px) {
+    .token-help,
+    .token-summary {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 700px) {
+    .token-toolbar {
+      flex-direction: column;
+    }
+
+    .token-toolbar .btn {
+      width: 100%;
+      justify-content: center;
+    }
+
+    .token-value {
+      max-width: 100%;
+      width: 100%;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block topbar_extra %}
+<button class="btn btn-primary" type="button" onclick="showCreateTokenModal()">
+  <i class="fa-solid fa-plus"></i> Create Token
+</button>
+{% endblock %}
 
 {% block content %}
-<div class="page-header">
+<div class="token-toolbar">
   <div>
-    <h1 class="page-title">Access Tokens / សោចូលប្រើ API</h1>
-    <p class="page-subtitle">Manage API access tokens for external integrations</p>
+    <div class="token-title">API Access Tokens</div>
+    <div class="token-subtitle">Give trusted members or external tools permission to read protected API URLs.</div>
   </div>
-  <button class="btn btn-primary" onclick="document.getElementById('createModal').style.display='flex'">
-    <i class="fa-solid fa-plus"></i> Create Token
+  <button class="btn btn-primary" type="button" onclick="showCreateTokenModal()">
+    <i class="fa-solid fa-key"></i> New Access Token
   </button>
 </div>
 
+<div class="token-summary">
+  <div class="token-stat active">
+    <div class="token-stat-value">{{ active_count }}</div>
+    <div class="token-stat-label">Active and usable</div>
+  </div>
+  <div class="token-stat expired">
+    <div class="token-stat-value">{{ expired_count }}</div>
+    <div class="token-stat-label">Expired</div>
+  </div>
+  <div class="token-stat inactive">
+    <div class="token-stat-value">{{ inactive_count }}</div>
+    <div class="token-stat-label">Manually disabled</div>
+  </div>
+</div>
+
+<div class="token-help">
+  <div class="card">
+    <div class="card-header">
+      <div class="fw-700"><i class="fa-solid fa-circle-info"></i> How tokens work</div>
+    </div>
+    <div class="card-body">
+      <div class="token-help-list">
+        <div class="token-help-item">
+          <i class="fa-solid fa-shield-halved"></i>
+          <div>API pages require a logged-in user plus one valid admin Access Token.</div>
+        </div>
+        <div class="token-help-item">
+          <i class="fa-solid fa-calendar-check"></i>
+          <div>A token stops working when it is expired, inactive, or deleted.</div>
+        </div>
+        <div class="token-help-item">
+          <i class="fa-solid fa-copy"></i>
+          <div>Click any token value in the table to copy it.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="fw-700"><i class="fa-solid fa-code"></i> Usage example</div>
+    </div>
+    <div class="card-body">
+      <div class="text-small text-muted mb-16">Use either the request header or add the token to a URL.</div>
+      <div class="token-code mb-16">X-ACCESS-TOKEN: &lt;admin_access_token&gt;</div>
+      <div class="token-code">/api/v1/projects/?token=&lt;admin_access_token&gt;</div>
+    </div>
+  </div>
+</div>
+
 <div class="card">
-  <div class="card-body p-0">
-    <table style="width:100%; border-collapse:collapse;">
+  <div class="card-header">
+    <div>
+      <div class="fw-700">Token List</div>
+      <div class="text-small text-muted">{{ tokens|length }} token(s) total</div>
+    </div>
+  </div>
+  <div class="card-body" style="padding:0">
+    <table class="table">
       <thead>
-        <tr style="border-bottom:1px solid var(--border);">
-          <th style="padding:12px 16px; text-align:left; color:var(--text-muted); font-size:0.8rem; text-transform:uppercase;">Company</th>
-          <th style="padding:12px 16px; text-align:left; color:var(--text-muted); font-size:0.8rem; text-transform:uppercase;">Token (click to copy)</th>
-          <th style="padding:12px 16px; text-align:left; color:var(--text-muted); font-size:0.8rem; text-transform:uppercase;">Expires</th>
-          <th style="padding:12px 16px; text-align:left; color:var(--text-muted); font-size:0.8rem; text-transform:uppercase;">Status</th>
-          <th style="padding:12px 16px; text-align:left; color:var(--text-muted); font-size:0.8rem; text-transform:uppercase;">Actions</th>
+        <tr>
+          <th>Company / Label</th>
+          <th>Token</th>
+          <th>Expires</th>
+          <th>Status</th>
+          <th>Created</th>
+          <th>Actions</th>
         </tr>
       </thead>
       <tbody>
         {% for token in tokens %}
-        <tr style="border-bottom:1px solid var(--border);">
-          <td style="padding:12px 16px; font-weight:500;">{{ token.company_name }}</td>
-          <td style="padding:12px 16px;">
-            <code
+        <tr>
+          <td>
+            <div class="fw-700">{{ token.company_name }}</div>
+            <div class="text-small text-muted">Token ID {{ token.id }}</div>
+          </td>
+          <td>
+            <button
+              type="button"
+              class="token-value"
               data-token="{{ token.token }}"
-              title="Click to copy"
-              style="cursor:pointer; background:var(--bg-secondary); padding:4px 8px; border-radius:4px; font-size:0.8rem; user-select:all;"
+              title="Click to copy token"
               onclick="copyToken(this)"
-            >{{ token.token }}</code>
+            >
+              <span>{{ token.token }}</span>
+              <i class="fa-solid fa-copy token-copy"></i>
+            </button>
           </td>
-          <td style="padding:12px 16px; color:var(--text-muted);">
-            {% if token.expire_date %}{{ token.expire_date }}{% else %}<span style="color:var(--text-muted);">Never</span>{% endif %}
-          </td>
-          <td style="padding:12px 16px;">
-            {% if token.is_active %}
-              <span class="badge badge-success">Active</span>
+          <td>
+            <div>{{ token.expire_date|date:"M d, Y" }}</div>
+            {% if token.expire_date < today %}
+              <div class="text-small text-danger">Expired</div>
             {% else %}
-              <span class="badge badge-danger">Inactive</span>
+              <div class="text-small text-muted">Valid until this date</div>
             {% endif %}
           </td>
-          <td style="padding:12px 16px;">
-            <div style="display:flex; gap:8px;">
+          <td>
+            {% if not token.is_active %}
+              <span class="badge badge-critical">Inactive</span>
+            {% elif token.expire_date < today %}
+              <span class="badge badge-doing">Expired</span>
+            {% else %}
+              <span class="badge badge-done">Active</span>
+            {% endif %}
+          </td>
+          <td class="text-muted text-small">{{ token.created_at|date:"M d, Y" }}</td>
+          <td>
+            <div class="token-actions">
               <form method="post" action="{% url 'admin_toggle_access_token' token.id %}">
                 {% csrf_token %}
                 <button type="submit" class="btn btn-sm {% if token.is_active %}btn-warning{% else %}btn-success{% endif %}">
-                  {% if token.is_active %}Deactivate{% else %}Activate{% endif %}
+                  {% if token.is_active %}
+                    <i class="fa-solid fa-pause"></i> Deactivate
+                  {% else %}
+                    <i class="fa-solid fa-play"></i> Activate
+                  {% endif %}
                 </button>
               </form>
-              <form method="post" action="{% url 'admin_delete_access_token' token.id %}" onsubmit="return confirm('Delete this token?')">
+              <form method="post" action="{% url 'admin_delete_access_token' token.id %}" onsubmit="return confirm('Delete this access token? Any API link using it will stop working.')">
                 {% csrf_token %}
-                <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                <button type="submit" class="btn btn-sm btn-danger">
+                  <i class="fa-solid fa-trash"></i> Delete
+                </button>
               </form>
             </div>
           </td>
         </tr>
         {% empty %}
         <tr>
-          <td colspan="5" style="padding:32px; text-align:center; color:var(--text-muted);">
-            No access tokens yet. Create one above.
+          <td colspan="6">
+            <div class="token-empty">
+              <i class="fa-solid fa-key"></i>
+              <div class="fw-700">No access tokens yet</div>
+              <div class="text-small">Create one before sharing API URLs with members or external tools.</div>
+            </div>
           </td>
         </tr>
         {% endfor %}
@@ -73,52 +350,81 @@
   </div>
 </div>
 
-<!-- Create Token Modal -->
-<div id="createModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
-  <div class="card" style="width:100%; max-width:440px; padding:24px;">
-    <h3 style="margin-bottom:16px;">Create Access Token</h3>
-    <form method="post" action="{% url 'admin_create_access_token' %}">
-      {% csrf_token %}
-      <div class="form-group" style="margin-bottom:16px;">
-        <label class="form-label">Company Name *</label>
-        <input type="text" name="company_name" class="form-control" placeholder="e.g. Acme Corp" required>
+<div class="modal-overlay" id="createModal">
+  <div class="modal-box" style="max-width:480px">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">Create Access Token</div>
+        <div class="text-small text-muted">Use a clear label and choose when this token should stop working.</div>
       </div>
-      <div class="form-group" style="margin-bottom:20px;">
-        <label class="form-label">Expire Date (optional)</label>
-        <input type="date" name="expire_date" class="form-control">
-      </div>
-      <div style="display:flex; gap:8px; justify-content:flex-end;">
-        <button type="button" class="btn btn-secondary" onclick="document.getElementById('createModal').style.display='none'">Cancel</button>
-        <button type="submit" class="btn btn-primary">Create Token</button>
-      </div>
-    </form>
+      <button class="modal-close" type="button" onclick="hideCreateTokenModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <form method="post" action="{% url 'admin_create_access_token' %}">
+        {% csrf_token %}
+        <div class="form-group">
+          <label class="form-label">Company or label <span style="color:var(--red)">*</span></label>
+          <input type="text" name="company_name" class="form-control" placeholder="e.g. Mobile App, QA Team, Partner API" required>
+          <div class="text-small text-muted mt-8">This is only a name to help you remember who uses the token.</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Expire date <span style="color:var(--red)">*</span></label>
+          <input type="date" name="expire_date" class="form-control" required>
+          <div class="text-small text-muted mt-8">After this date, API requests with this token will be denied.</div>
+        </div>
+        <div style="display:flex; gap:8px; justify-content:flex-end">
+          <button type="button" class="btn btn-secondary" onclick="hideCreateTokenModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">
+            <i class="fa-solid fa-key"></i> Create Token
+          </button>
+        </div>
+      </form>
+    </div>
   </div>
 </div>
 
 <script>
+function showCreateTokenModal() {
+  document.getElementById('createModal').classList.add('show');
+}
+
+function hideCreateTokenModal() {
+  document.getElementById('createModal').classList.remove('show');
+}
+
 function copyToken(el) {
   const token = el.getAttribute('data-token');
-  navigator.clipboard.writeText(token).then(() => {
-    const original = el.textContent;
-    el.textContent = '✓ Copied!';
-    el.style.color = 'var(--success, #22c55e)';
-    setTimeout(() => { el.textContent = original; el.style.color = ''; }, 1500);
-  }).catch(() => {
-    const ta = document.createElement('textarea');
-    ta.value = token;
-    document.body.appendChild(ta);
-    ta.select();
-    document.execCommand('copy');
-    document.body.removeChild(ta);
-    const original = el.textContent;
-    el.textContent = '✓ Copied!';
-    el.style.color = 'var(--success, #22c55e)';
-    setTimeout(() => { el.textContent = original; el.style.color = ''; }, 1500);
-  });
+  const label = el.querySelector('span');
+  const original = label.textContent;
+
+  function showCopied() {
+    label.textContent = 'Copied';
+    el.style.borderColor = 'var(--green)';
+    setTimeout(() => {
+      label.textContent = original;
+      el.style.borderColor = '';
+    }, 1500);
+  }
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(token).then(showCopied).catch(() => fallbackCopy(token, showCopied));
+  } else {
+    fallbackCopy(token, showCopied);
+  }
+}
+
+function fallbackCopy(token, onDone) {
+  const ta = document.createElement('textarea');
+  ta.value = token;
+  document.body.appendChild(ta);
+  ta.select();
+  document.execCommand('copy');
+  document.body.removeChild(ta);
+  onDone();
 }
 
 document.getElementById('createModal').addEventListener('click', function(e) {
-  if (e.target === this) this.style.display = 'none';
+  if (e.target === this) hideCreateTokenModal();
 });
 </script>
 {% endblock %}

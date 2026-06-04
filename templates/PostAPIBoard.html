@@ -1,7 +1,6 @@
 {% extends 'base.html' %}
 
 {% block title %}Board API{% endblock %}
-{% block body_class %}admin-crud-theme{% endblock %}
 {% block page_title %}Board API / POST PUT DELETE{% endblock %}
 
 {% block extra_head %}
@@ -19,6 +18,18 @@
   .api-resource-item { background: var(--bg-dark); border: 1px solid var(--border); border-radius: 8px; padding: 12px; }
   .api-resource-name { color: var(--text-primary); font-weight: 700; margin-bottom: 4px; }
   .api-color-chip { width: 18px; height: 18px; border: 1px solid var(--border); border-radius: 4px; flex: 0 0 auto; }
+  .api-id-button { width: 100%; color: inherit; cursor: pointer; font: inherit; text-align: left; }
+  .api-id-button:hover { border-color: var(--accent); background: var(--bg-hover); }
+  .api-row-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px; }
+  .api-panel-section { margin-bottom: 18px; }
+  .api-panel-title { color: var(--text-primary); font-weight: 700; margin-bottom: 8px; }
+  .api-select-panel { margin-bottom: 12px; }
+  .btn-warning {
+    background: rgba(210,153,34,.15);
+    border: 1px solid rgba(210,153,34,.3);
+    color: var(--yellow);
+  }
+  .btn-warning:hover { background: rgba(210,153,34,.25); }
   @media (max-width: 1100px) { .api-shell { grid-template-columns: 1fr; } }
   @media (max-width: 700px) { .api-form-grid { grid-template-columns: 1fr; } }
 </style>
@@ -29,7 +40,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="admin-crud-page">
+<div class="api-crud-page">
 <div class="api-shell">
   <div>
     <div class="card mb-24">
@@ -174,10 +185,16 @@ function showMessage(elementId, type, message) {
   document.getElementById(elementId).innerHTML = `<div class="alert alert-${type}">${message}</div>`;
 }
 async function requestJson(url, options = {}) {
+  const apiAccessToken = "{{ api_access_token|escapejs }}";
   const res = await fetch(url, {
     ...options,
     credentials: "same-origin",
-    headers: { "Content-Type": "application/json", "X-CSRFToken": csrftoken, ...(options.headers || {}) }
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRFToken": csrftoken,
+      ...(apiAccessToken ? { "X-ACCESS-TOKEN": apiAccessToken } : {}),
+      ...(options.headers || {})
+    }
   });
   const data = res.status === 204 ? null : await res.json().catch(() => null);
   if (!res.ok) throw new Error(data ? JSON.stringify(data) : `HTTP ${res.status}`);

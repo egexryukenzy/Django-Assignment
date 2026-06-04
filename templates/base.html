@@ -38,6 +38,12 @@
           Notifications / ការជូនដំណឹង
           {% if unread_count %}<span class="nav-badge">{{ unread_count }}</span>{% endif %}
         </a>
+        {% if not user.is_admin and not user.is_staff and not user.is_superuser %}
+        <a href="{% url 'member_api_docs' %}" class="nav-link {% if request.resolver_match.url_name == 'member_api_docs' %}active{% endif %}">
+          <span class="nav-icon"><i class="fa-solid fa-code"></i></span>
+          API Docs / ឯកសារ API
+        </a>
+        {% endif %}
 
         {% if user.is_admin or user.is_staff or user.is_superuser %}
         <div class="nav-section" style="margin-top: 8px">Admin / អ្នកគ្រប់គ្រង</div>
