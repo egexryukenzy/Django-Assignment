@@ -70,25 +70,27 @@
       </div>
       <div class="card-body" style="padding:0">
         {% for board in boards %}
-        <div style="display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:1px solid rgba(48,54,61,.5);">
-          <a href="{% url 'board' project.id board.id %}" style="display:flex;align-items:center;gap:12px;flex:1;text-decoration:none;color:inherit;">
+        <div class="board-row">
+          <a href="{% url 'board' project.id board.id %}" class="board-row-link">
             <div style="width:10px;height:10px;border-radius:3px;background:{{ board.background }}"></div>
-            <div style="flex:1">
+            <div class="board-row-main">
               <div style="font-weight:600;font-size:13.5px">{{ board.name }}</div>
               <div style="font-size:11px;color:var(--text-muted)">{{ board.lists.count }} lists</div>
             </div>
             <i class="fa-solid fa-arrow-right" style="color:var(--text-faint)"></i>
           </a>
           {% if can_lead %}
-          <button class="btn btn-icon btn-secondary" style="width:26px;height:26px;padding:0;font-size:11px" onclick="openBoardEditModal({{ board.id }}, '{{ board.name|escapejs }}')" title="Rename board">
-            <i class="fa-solid fa-pen"></i>
-          </button>
-          <form method="post" action="{% url 'board_delete' project.id board.id %}" style="display:inline" onsubmit="return confirm('Delete this board? All lists and cards will be lost.')">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-icon btn-secondary" style="width:26px;height:26px;padding:0;font-size:11px;color:var(--red,#ef4444)" title="Delete board">
-              <i class="fa-solid fa-trash"></i>
+          <div class="board-row-actions">
+            <button class="btn btn-icon btn-secondary" style="width:26px;height:26px;padding:0;font-size:11px" onclick="openBoardEditModal({{ board.id }}, '{{ board.name|escapejs }}')" title="Rename board">
+              <i class="fa-solid fa-pen"></i>
             </button>
-          </form>
+            <form method="post" action="{% url 'board_delete' project.id board.id %}" onsubmit="return confirm('Delete this board? All lists and cards will be lost.')">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-icon btn-secondary" style="width:26px;height:26px;padding:0;font-size:11px;color:var(--red,#ef4444)" title="Delete board">
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            </form>
+          </div>
           {% endif %}
         </div>
         {% empty %}
