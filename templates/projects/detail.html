@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+﻿{% extends 'base.html' %}
 {% block title %}{{ project.name }}{% endblock %}
 {% block page_title %}{{ project.name }}{% endblock %}
 {% block topbar_extra %}
@@ -17,7 +17,7 @@
     <div class="card mb-16">
       <div class="card-header">
         <div>
-          <div class="fw-700">Project Info / ព័ត៌មានគម្រោង</div>
+          <div class="fw-700">Project Info</div>
           <span class="badge {% if project.status == 'active' %}badge-doing{% else %}badge-todo{% endif %}" style="margin-top:4px">{{ project.status }}</span>
         </div>
         {% if can_lead %}
@@ -34,7 +34,7 @@
         <p style="color:var(--text-muted);font-size:13.5px">{{ project.description|default:"No description provided." }}</p>
         <div style="margin-top:16px">
           <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-muted);margin-bottom:6px">
-            <span>Progress / វឌ្ឍនភាព</span>
+            <span>Progress</span>
             <span>{{ project.done_cards }}/{{ project.total_cards }} tasks • {{ project.progress }}%</span>
           </div>
           <div class="progress-bar" style="height:8px">
@@ -61,7 +61,7 @@
     <!-- Boards -->
     <div class="card mb-16">
       <div class="card-header">
-        <div class="fw-700">Boards / បន្ទះ</div>
+        <div class="fw-700">Boards</div>
         {% if can_lead %}
         <button class="btn btn-secondary btn-sm" onclick="showModal('boardModal')">
           <i class="fa-solid fa-plus"></i> Add Board
@@ -100,7 +100,7 @@
     <!-- Labels -->
     <div class="card">
       <div class="card-header">
-        <div class="fw-700">Labels / ស្លាក</div>
+        <div class="fw-700">Labels</div>
         {% if can_lead %}<button class="btn btn-secondary btn-sm" onclick="showModal('labelModal')"><i class="fa-solid fa-plus"></i> Add Label</button>{% endif %}
       </div>
       <div class="card-body" style="display:flex;flex-wrap:wrap;gap:8px">
@@ -130,7 +130,7 @@
   <div>
     <div class="card">
       <div class="card-header">
-        <div class="fw-700">Members / សមាជិក</div>
+        <div class="fw-700">Members</div>
         {% if can_lead %}
         <button class="btn btn-secondary btn-sm" onclick="showModal('memberModal')">
           <i class="fa-solid fa-user-plus"></i>
@@ -173,14 +173,14 @@
 <div class="modal-overlay" id="memberModal">
   <div class="modal-box">
     <div class="modal-header">
-      <div class="modal-title">Add Member / បន្ថែមសមាជិក</div>
+      <div class="modal-title">Add Member</div>
       <button class="modal-close" onclick="hideModal('memberModal')">×</button>
     </div>
     <div class="modal-body">
       <form method="post" action="{% url 'project_add_member' project.id %}">
         {% csrf_token %}
         <div class="form-group">
-          <label class="form-label">Select User / ជ្រើសអ្នកប្រើ</label>
+          <label class="form-label">Select User</label>
           {% if all_users %}
           <select name="user_id" class="form-control" required>
             <option value="">-- Choose user --</option>
@@ -196,7 +196,7 @@
           {% endif %}
         </div>
         <div class="form-group">
-          <label class="form-label">Role / តួនាទី</label>
+          <label class="form-label">Role</label>
           <select name="role" class="form-control">
             <option value="member">Member</option>
             <option value="admin">Admin</option>
@@ -215,7 +215,7 @@
 <div class="modal-overlay" id="boardModal">
   <div class="modal-box">
     <div class="modal-header">
-      <div class="modal-title">New Board / បន្ទះថ្មី</div>
+      <div class="modal-title">New Board</div>
       <button class="modal-close" onclick="hideModal('boardModal')">×</button>
     </div>
     <div class="modal-body">
@@ -238,7 +238,7 @@
 <div class="modal-overlay" id="labelModal">
   <div class="modal-box">
     <div class="modal-header">
-      <div class="modal-title">New Label / ស្លាកថ្មី</div>
+      <div class="modal-title">New Label</div>
       <button class="modal-close" onclick="hideModal('labelModal')">×</button>
     </div>
     <div class="modal-body">
@@ -268,7 +268,7 @@
 <div class="modal-overlay" id="boardEditModal">
   <div class="modal-box" style="max-width:400px">
     <div class="modal-header">
-      <div class="modal-title">Rename Board / ប្តូរឈ្មោះបន្ទះ</div>
+      <div class="modal-title">Rename Board</div>
       <button class="modal-close" onclick="hideModal('boardEditModal')">×</button>
     </div>
     <div class="modal-body">
@@ -291,7 +291,7 @@
 <div class="modal-overlay" id="labelEditModal">
   <div class="modal-box" style="max-width:400px">
     <div class="modal-header">
-      <div class="modal-title">Edit Label / កែប្រែស្លាក</div>
+      <div class="modal-title">Edit Label</div>
       <button class="modal-close" onclick="hideModal('labelEditModal')">×</button>
     </div>
     <div class="modal-body">
@@ -337,3 +337,5 @@ function openLabelEditModal(labelId, currentName, currentColor) {
 }
 </script>
 {% endblock %}
+
+

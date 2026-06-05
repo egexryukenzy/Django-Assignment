@@ -1,6 +1,6 @@
-{% extends 'base.html' %}
+﻿{% extends 'base.html' %}
 {% block title %}Edit {{ project.name }}{% endblock %}
-{% block page_title %}Edit Project / កែប្រែគម្រោង{% endblock %}
+{% block page_title %}Edit Project{% endblock %}
 {% block content %}
 <div style="max-width:600px;margin:0 auto">
   <div class="card">
@@ -17,7 +17,7 @@
           <textarea name="description" class="form-control" rows="3">{{ project.description }}</textarea>
         </div>
         <div class="form-group">
-          <label class="form-label">Deadline / កាលបរិច្ឆេទកំណត់</label>
+          <label class="form-label">Deadline</label>
           <input type="date" name="deadline" class="form-control" value="{{ project.deadline|date:'Y-m-d' }}">
         </div>
         <div class="form-group">
@@ -36,3 +36,5 @@
   </div>
 </div>
 {% endblock %}
+
+

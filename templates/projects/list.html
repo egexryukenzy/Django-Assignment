@@ -1,13 +1,13 @@
-{% extends 'base.html' %}
+﻿{% extends 'base.html' %}
 {% block title %}Projects{% endblock %}
-{% block page_title %}Projects / គម្រោង{% endblock %}
+{% block page_title %}Projects{% endblock %}
 {% block topbar_extra %}
-<a href="{% url 'project_create' %}" class="btn btn-primary"><i class="fa-solid fa-plus"></i> New Project</a>
+<a href="{% url 'project_create' %}" class="btn btn-icon btn-primary" title="New Project" aria-label="New Project"><i class="fa-solid fa-plus"></i></a>
 {% endblock %}
 {% block content %}
 <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
   <form method="get" style="flex:1;max-width:400px;display:flex;gap:8px">
-    <input type="text" name="q" class="form-control" placeholder="Search projects... / ស្វែងរកគម្រោង" value="{{ q }}">
+    <input type="text" name="q" class="form-control" placeholder="Search projects..." value="{{ q }}">
     <button type="submit" class="btn btn-secondary"><i class="fa-solid fa-search"></i></button>
   </form>
   <span class="text-muted text-small">{{ projects|length }} project(s)</span>
@@ -57,3 +57,5 @@
 </div>
 {% endif %}
 {% endblock %}
+
+

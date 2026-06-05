@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+﻿{% extends 'base.html' %}
 {% block title %}{{ card.title }}{% endblock %}
 {% block page_title %}
 <div style="display:flex;align-items:center;gap:8px;font-size:13px">
@@ -62,7 +62,7 @@
     <!-- Comments -->
     <div class="card mb-16">
       <div class="card-header">
-        <div class="fw-700">Comments / មតិយោបល់ <span style="color:var(--text-muted);font-weight:400;font-size:12px">({{ comments|length }})</span></div>
+        <div class="fw-700">Comments<span style="color:var(--text-muted);font-weight:400;font-size:12px">({{ comments|length }})</span></div>
       </div>
       <div class="card-body">
         {% for comment in comments %}
@@ -90,7 +90,7 @@
         <form method="post" style="margin-top:12px">
           {% csrf_token %}
           <input type="hidden" name="action" value="comment">
-          <textarea name="content" class="form-control" rows="2" placeholder="Write a comment... / សរសេរមតិ..." required style="margin-bottom:8px"></textarea>
+          <textarea name="content" class="form-control" rows="2" placeholder="Write a comment..." required style="margin-bottom:8px"></textarea>
           <button type="submit" class="btn btn-primary btn-sm"><i class="fa-solid fa-paper-plane"></i> Comment</button>
         </form>
       </div>
@@ -99,7 +99,7 @@
     <!-- Attachments -->
     <div class="card">
       <div class="card-header">
-        <div class="fw-700">Attachments / ឯកសារ <span style="color:var(--text-muted);font-weight:400;font-size:12px">({{ attachments|length }})</span></div>
+        <div class="fw-700">Attachments<span style="color:var(--text-muted);font-weight:400;font-size:12px">({{ attachments|length }})</span></div>
       </div>
       <div class="card-body">
         {% for att in attachments %}
@@ -148,19 +148,19 @@
   <div style="display:flex;flex-direction:column;gap:16px">
     <!-- Quick Info -->
     <div class="card">
-      <div class="card-header"><div class="fw-700">Details / ព័ត៌មានលម្អិត</div></div>
+      <div class="card-header"><div class="fw-700">Details</div></div>
       <div class="card-body" style="display:flex;flex-direction:column;gap:12px">
         <div>
-          <div class="form-label">Status / ស្ថានភាព</div>
+          <div class="form-label">Status</div>
           <span class="badge badge-{{ card.status }}">{{ card.get_status_display }}</span>
         </div>
         <div>
-          <div class="form-label">Priority / អាទិភាព</div>
+          <div class="form-label">Priority</div>
           <span class="badge badge-{{ card.priority }}">{{ card.get_priority_display }}</span>
         </div>
         {% if card.deadline %}
         <div>
-          <div class="form-label">Deadline / ថ្ងៃកំណត់</div>
+          <div class="form-label">Deadline</div>
           <span {% if card.is_overdue %}class="text-danger"{% endif %} style="font-size:13px;font-weight:600">
             {% if card.is_overdue %}<i class="fa-solid fa-triangle-exclamation"></i> {% endif %}
             {{ card.deadline }}
@@ -168,7 +168,7 @@
         </div>
         {% endif %}
         <div>
-          <div class="form-label">List / បញ្ជី</div>
+          <div class="form-label">List</div>
           <span style="font-size:13px">{{ card.list.title }}</span>
         </div>
       </div>
@@ -177,7 +177,7 @@
     <!-- Assignees -->
     <div class="card">
       <div class="card-header">
-        <div class="fw-700">Assignees / អ្នករទទួលខុសត្រូវ</div>
+        <div class="fw-700">Assignees</div>
         {% if can_lead %}<button class="btn btn-secondary btn-sm" onclick="showModal('assignModal')"><i class="fa-solid fa-user-plus"></i></button>{% endif %}
       </div>
       <div class="card-body" style="padding:8px 0">
@@ -207,7 +207,7 @@
     <!-- Labels -->
     <div class="card">
       <div class="card-header">
-        <div class="fw-700">Labels / ស្លាក</div>
+        <div class="fw-700">Labels</div>
         {% if can_lead %}<button class="btn btn-secondary btn-sm" onclick="showModal('labelModal')"><i class="fa-solid fa-tag"></i></button>{% endif %}
       </div>
       <div class="card-body" style="display:flex;flex-wrap:wrap;gap:6px">
@@ -226,7 +226,7 @@
 <div class="modal-overlay" id="editModal">
   <div class="modal-box" style="max-width:560px">
     <div class="modal-header">
-      <div class="modal-title">Edit Card / កែប្រែ</div>
+      <div class="modal-title">Edit Card</div>
       <button class="modal-close" onclick="hideModal('editModal')">×</button>
     </div>
     <div class="modal-body">
@@ -234,11 +234,11 @@
         {% csrf_token %}
         <input type="hidden" name="action" value="edit">
         <div class="form-group">
-          <label class="form-label">Title / ចំណងជើង</label>
+          <label class="form-label">Title</label>
           <input type="text" name="title" class="form-control" value="{{ card.title }}" required>
         </div>
         <div class="form-group">
-          <label class="form-label">Description / ពិពណ៌នា</label>
+          <label class="form-label">Description</label>
           <textarea name="description" class="form-control" rows="4">{{ card.description }}</textarea>
         </div>
         <div class="grid-2">
@@ -260,7 +260,7 @@
           </div>
         </div>
         <div class="form-group">
-          <label class="form-label">Deadline / ថ្ងៃកំណត់</label>
+          <label class="form-label">Deadline</label>
           <input type="date" name="deadline" class="form-control" value="{{ card.deadline|default:'' }}">
         </div>
         <div style="display:flex;gap:8px;justify-content:flex-end">
@@ -276,7 +276,7 @@
 <div class="modal-overlay" id="assignModal">
   <div class="modal-box">
     <div class="modal-header">
-      <div class="modal-title">Assign Member / ចាត់តាំង</div>
+      <div class="modal-title">Assign Member</div>
       <button class="modal-close" onclick="hideModal('assignModal')">×</button>
     </div>
     <div class="modal-body">
@@ -307,7 +307,7 @@
 <div class="modal-overlay" id="labelModal">
   <div class="modal-box">
     <div class="modal-header">
-      <div class="modal-title">Manage Labels / គ្រប់គ្រងស្លាក</div>
+      <div class="modal-title">Manage Labels</div>
       <button class="modal-close" onclick="hideModal('labelModal')">×</button>
     </div>
     <div class="modal-body">
@@ -345,3 +345,5 @@ document.querySelectorAll('.modal-overlay').forEach(m => {
 });
 </script>
 {% endblock %}
+
+

@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect, get_object_or_404
+﻿from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -280,9 +280,9 @@ def project_create(request):
         )
         ProjectMember.objects.create(project=project, user=request.user, role="owner")
         board = Board.objects.create(project=project, name="Main Board", position=0)
-        List.objects.create(board=board, title="To Do / ត្រូវធ្វើ", position=0)
-        List.objects.create(board=board, title="Doing / កំពុងធ្វើ", position=1)
-        List.objects.create(board=board, title="Done / បានធ្វើ", position=2)
+        List.objects.create(board=board, title="To Do", position=0)
+        List.objects.create(board=board, title="Doing", position=1)
+        List.objects.create(board=board, title="Done", position=2)
         messages.success(request, f'Project "{name}" created!')
         return redirect("board", project_id=project.id, board_id=board.id)
     return render(
@@ -731,6 +731,35 @@ def notification_read(request, notif_id):
     return JsonResponse({"ok": True})
 
 
+@login_required
+def notifications_poll(request):
+    after_id = request.GET.get("after", "0")
+    try:
+        after_id = int(after_id)
+    except ValueError:
+        after_id = 0
+
+    new_notifs = (
+        request.user.notifications.filter(id__gt=after_id)
+        .order_by("id")
+        .values("id", "type", "message", "link", "is_read")[:10]
+    )
+    latest_id = (
+        request.user.notifications.order_by("-id")
+        .values_list("id", flat=True)
+        .first()
+        or after_id
+    )
+
+    return JsonResponse(
+        {
+            "unread_count": request.user.notifications.filter(is_read=False).count(),
+            "latest_id": latest_id,
+            "new": list(new_notifs),
+        }
+    )
+
+
 # ─── ADMIN VIEWS ──────────────────────────────────────────────────────────────
 
 
@@ -917,7 +946,7 @@ def profile(request):
 def member_api_docs(request):
     api_sections = [
         {
-            'title': 'Projects / គម្រោង',
+            'title': 'Projects',
             'icon': 'folder-open',
             'endpoints': [
                 {'method': 'GET', 'url': '/api/v1/projects/',              'desc': 'List your accessible projects'},
@@ -928,7 +957,7 @@ def member_api_docs(request):
             ]
         },
         {
-            'title': 'Boards / បន្ទះ',
+            'title': 'Boards',
             'icon': 'table-columns',
             'endpoints': [
                 {'method': 'GET', 'url': '/api/v1/boards/<id>/',       'desc': 'Get board detail'},
@@ -937,7 +966,7 @@ def member_api_docs(request):
             ]
         },
         {
-            'title': 'Cards / កាត',
+            'title': 'Cards',
             'icon': 'square-check',
             'endpoints': [
                 {'method': 'GET', 'url': '/api/v1/lists/<id>/cards/',       'desc': 'Get all cards in list'},
@@ -962,7 +991,7 @@ def admin_api_docs(request):
 
     api_sections = [
         {
-            'title': 'Auth / ការផ្ទៀងផ្ទាត់',
+            'title': 'Auth',
             'icon': 'lock',
             'endpoints': [
                 {'method': 'POST',  'url': '/api/v1/auth/register/', 'desc': 'Register a new user'},
@@ -973,7 +1002,7 @@ def admin_api_docs(request):
             ]
         },
         {
-            'title': 'Users / អ្នកប្រើ',
+            'title': 'Users',
             'icon': 'users',
             'endpoints': [
                 {'method': 'GET',   'url': '/api/v1/users/',      'desc': 'List all users (admin only)'},
@@ -982,7 +1011,7 @@ def admin_api_docs(request):
             ]
         },
         {
-            'title': 'Projects / គម្រោង',
+            'title': 'Projects',
             'icon': 'folder-open',
             'endpoints': [
                 {'method': 'GET',    'url': '/api/v1/projects/',              'desc': 'List all accessible projects'},
@@ -1000,7 +1029,7 @@ def admin_api_docs(request):
             ]
         },
         {
-            'title': 'Boards / បន្ទះ',
+            'title': 'Boards',
             'icon': 'table-columns',
             'endpoints': [
                 {'method': 'GET',    'url': '/api/v1/boards/<id>/',       'desc': 'Get board detail'},
@@ -1011,7 +1040,7 @@ def admin_api_docs(request):
             ]
         },
         {
-            'title': 'Lists / បញ្ជី',
+            'title': 'Lists',
             'icon': 'list',
             'endpoints': [
                 {'method': 'GET',    'url': '/api/v1/lists/<id>/',       'desc': 'Get list detail'},
@@ -1021,7 +1050,7 @@ def admin_api_docs(request):
             ]
         },
         {
-            'title': 'Cards / កាត',
+            'title': 'Cards',
             'icon': 'square-check',
             'endpoints': [
                 {'method': 'POST',   'url': '/api/v1/cards/',                  'desc': 'Create card'},
@@ -1038,7 +1067,7 @@ def admin_api_docs(request):
             ]
         },
         {
-            'title': 'Comments / មតិ',
+            'title': 'Comments',
             'icon': 'comments',
             'endpoints': [
                 {'method': 'GET',    'url': '/api/v1/comments/<id>/', 'desc': 'Get comment detail'},
@@ -1047,7 +1076,7 @@ def admin_api_docs(request):
             ]
         },
         {
-            'title': 'Notifications / ការជូនដំណឹង',
+            'title': 'Notifications',
             'icon': 'bell',
             'endpoints': [
                 {'method': 'GET',   'url': '/api/v1/notifications/',           'desc': 'List all notifications'},
@@ -1325,3 +1354,5 @@ def notifications_stream(request):
     response["Cache-Control"] = "no-cache"
     response["X-Accel-Buffering"] = "no"
     return response
+
+

@@ -1,6 +1,6 @@
-{% extends 'base.html' %}
+﻿{% extends 'base.html' %}
 {% block title %}Notifications{% endblock %}
-{% block page_title %}Notifications / ការជូនដំណឹង{% endblock %}
+{% block page_title %}Notifications{% endblock %}
 {% block content %}
 <div style="max-width:700px">
   <div class="card">
@@ -25,10 +25,12 @@
       {% empty %}
       <div style="text-align:center;padding:64px;color:var(--text-muted)">
         <i class="fa-solid fa-bell-slash" style="font-size:40px;margin-bottom:16px;display:block;opacity:.2"></i>
-        No notifications yet / មិនទាន់មានការជូនដំណឹង
+        No notifications yet
       </div>
       {% endfor %}
     </div>
   </div>
 </div>
 {% endblock %}
+
+

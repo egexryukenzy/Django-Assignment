@@ -1,6 +1,6 @@
-{% extends 'base.html' %}
+﻿{% extends 'base.html' %}
 {% block title %}Manage Users{% endblock %}
-{% block page_title %}Manage Users / គ្រប់គ្រងអ្នកប្រើ{% endblock %}
+{% block page_title %}Manage Users{% endblock %}
 {% block topbar_extra %}
 <button class="btn btn-primary" onclick="showModal('createUserModal')">
   <i class="fa-solid fa-user-plus"></i> Create User
@@ -19,10 +19,10 @@
     <table class="table">
       <thead>
         <tr>
-          <th>User / អ្នកប្រើ</th>
+          <th>User</th>
           <th>Email</th>
-          <th>Role / តួនាទី</th>
-          <th>Joined / ចូលរួម</th>
+          <th>Role</th>
+          <th>Joined</th>
           <th>Status</th>
           <th>Action</th>
         </tr>
@@ -83,7 +83,7 @@
 <div class="modal-overlay" id="createUserModal">
   <div class="modal-box" style="max-width:480px">
     <div class="modal-header">
-      <div class="modal-title">Create New User / បង្កើតអ្នកប្រើថ្មី</div>
+      <div class="modal-title">Create New User</div>
       <button class="modal-close" onclick="hideModal('createUserModal')">×</button>
     </div>
     <div class="modal-body">
@@ -112,10 +112,10 @@
           <input type="password" name="password" class="form-control" placeholder="Min 6 characters" required>
         </div>
         <div class="form-group">
-          <label class="form-label">Role / តួនាទី</label>
+          <label class="form-label">Role</label>
           <select name="role" class="form-control">
-            <option value="member">Member / សមាជិក</option>
-            <option value="admin">Admin / អ្នកគ្រប់គ្រង</option>
+            <option value="member">Member</option>
+            <option value="admin">Admin</option>
           </select>
         </div>
         <div style="display:flex;gap:8px;justify-content:flex-end">
@@ -131,7 +131,7 @@
 <div class="modal-overlay" id="editUserModal">
   <div class="modal-box" style="max-width:480px">
     <div class="modal-header">
-      <div class="modal-title">Edit User / កែប្រែអ្នកប្រើ</div>
+      <div class="modal-title">Edit User</div>
       <button class="modal-close" onclick="hideModal('editUserModal')">×</button>
     </div>
     <div class="modal-body">
@@ -157,10 +157,10 @@
           <input type="email" name="email" id="edit_email" class="form-control" required>
         </div>
         <div class="form-group">
-          <label class="form-label">Role / តួនាទី</label>
+          <label class="form-label">Role</label>
           <select name="role" id="edit_role" class="form-control">
-            <option value="member">Member / សមាជិក</option>
-            <option value="admin">Admin / អ្នកគ្រប់គ្រង</option>
+            <option value="member">Member</option>
+            <option value="admin">Admin</option>
           </select>
         </div>
         <div class="form-group">
@@ -180,7 +180,7 @@
 <div class="modal-overlay" id="deleteUserModal">
   <div class="modal-box" style="max-width:400px">
     <div class="modal-header">
-      <div class="modal-title">Delete User / លុបអ្នកប្រើ</div>
+      <div class="modal-title">Delete User</div>
       <button class="modal-close" onclick="hideModal('deleteUserModal')">×</button>
     </div>
     <div class="modal-body">
@@ -225,3 +225,5 @@ function openDeleteModal(id, username) {
 }
 </script>
 {% endblock %}
+
+

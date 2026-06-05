@@ -1,10 +1,10 @@
-{% extends 'base.html' %}
+﻿{% extends 'base.html' %}
 {% block title %}Search{% endblock %}
-{% block page_title %}Search / ស្វែងរក{% endblock %}
+{% block page_title %}Search{% endblock %}
 {% block content %}
 <div style="max-width:800px">
   <form method="get" style="display:flex;gap:10px;margin-bottom:24px">
-    <input type="text" name="q" class="form-control" placeholder="Search tasks, projects... / ស្វែងរក..." value="{{ q }}" autofocus style="flex:1;font-size:15px;padding:12px 16px">
+    <input type="text" name="q" class="form-control" placeholder="Search tasks, projects..." value="{{ q }}" autofocus style="flex:1;font-size:15px;padding:12px 16px">
     <button type="submit" class="btn btn-primary" style="padding:0 20px"><i class="fa-solid fa-search"></i> Search</button>
   </form>
 
@@ -13,7 +13,7 @@
   {% if projects %}
   <div class="card mb-16">
     <div class="card-header">
-      <div class="fw-700">Projects / គម្រោង <span class="col-count" style="margin-left:8px">{{ projects|length }}</span></div>
+      <div class="fw-700">Projects<span class="col-count" style="margin-left:8px">{{ projects|length }}</span></div>
     </div>
     <div class="card-body" style="padding:0">
       {% for p in projects %}
@@ -34,7 +34,7 @@
   {% if cards %}
   <div class="card">
     <div class="card-header">
-      <div class="fw-700">Tasks / ការងារ <span class="col-count" style="margin-left:8px">{{ cards|length }}</span></div>
+      <div class="fw-700">Tasks<span class="col-count" style="margin-left:8px">{{ cards|length }}</span></div>
     </div>
     <div class="card-body" style="padding:0">
       {% for card in cards %}
@@ -68,3 +68,5 @@
   {% endif %}
 </div>
 {% endblock %}
+
+

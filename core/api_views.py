@@ -1,4 +1,4 @@
-from rest_framework import generics, status, permissions
+﻿from rest_framework import generics, status, permissions
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
@@ -121,9 +121,9 @@ class ProjectListCreateAPIView(generics.ListCreateAPIView):
         project = serializer.save(owner=self.request.user)
         ProjectMember.objects.create(project=project, user=self.request.user, role='owner')
         board = Board.objects.create(project=project, name='Main Board', position=0)
-        List.objects.create(board=board, title='To Do / ត្រូវធ្វើ', position=0)
-        List.objects.create(board=board, title='Doing / កំពុងធ្វើ', position=1)
-        List.objects.create(board=board, title='Done / បានធ្វើ', position=2)
+        List.objects.create(board=board, title='To Do', position=0)
+        List.objects.create(board=board, title='Doing', position=1)
+        List.objects.create(board=board, title='Done', position=2)
 
 
 class ProjectDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
@@ -230,7 +230,7 @@ class CardListCreateAPIView(generics.ListCreateAPIView):
 
     def perform_create(self, serializer):
         lst = get_object_or_404(List, pk=self.kwargs['list_id'])
-        status_map = {'To Do / ត្រូវធ្វើ': 'todo', 'Doing / កំពុងធ្វើ': 'doing', 'Done / បានធ្វើ': 'done'}
+        status_map = {'To Do': 'todo', 'Doing': 'doing', 'Done': 'done'}
         card_status = status_map.get(lst.title, 'todo')
         card = serializer.save(
             list=lst,
@@ -263,7 +263,7 @@ class CardMoveAPIView(APIView):
             lst = get_object_or_404(List, pk=serializer.validated_data['list_id'])
             card.list = lst
             card.position = serializer.validated_data['position']
-            status_map = {'To Do / ត្រូវធ្វើ': 'todo', 'Doing / កំពុងធ្វើ': 'doing', 'Done / បានធ្វើ': 'done'}
+            status_map = {'To Do': 'todo', 'Doing': 'doing', 'Done': 'done'}
             card.status = status_map.get(lst.title, card.status)
             card.save()
             return Response(CardSerializer(card).data)
@@ -416,3 +416,5 @@ class DashboardAPIView(APIView):
             'my_tasks': CardSerializer(my_cards.exclude(status='done').order_by('deadline')[:5], many=True).data,
             'unread_notifications': user.notifications.filter(is_read=False).count(),
         })
+
+

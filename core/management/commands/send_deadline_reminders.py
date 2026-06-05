@@ -1,4 +1,4 @@
-from django.core.management.base import BaseCommand
+﻿from django.core.management.base import BaseCommand
 from django.utils import timezone
 from datetime import timedelta
 
@@ -20,7 +20,7 @@ class Command(BaseCommand):
 
         for card in cards:
             days_left = (card.deadline - today).days
-            time_label = "today / ថ្ងៃនេះ" if days_left == 0 else "tomorrow / ថ្ងៃស្អែក"
+            time_label = "today" if days_left == 0 else "tomorrow"
             message = f'Task "{card.title}" is due {time_label}!'
 
             for user in card.assignees.all():
@@ -44,3 +44,5 @@ class Command(BaseCommand):
             f"[Deadline Reminders] {created_count} notification(s) created "
             f"(checked {cards.count()} card(s) due today/tomorrow)."
         ))
+
+

@@ -1,12 +1,12 @@
-{% extends 'base.html' %}
+﻿{% extends 'base.html' %}
 {% block title %}Create Project{% endblock %}
-{% block page_title %}New Project / គម្រោងថ្មី{% endblock %}
+{% block page_title %}New Project{% endblock %}
 {% block content %}
 <div style="max-width:600px;margin:0 auto">
   <div class="card">
     <div class="card-header">
       <div>
-        <div class="fw-700">Create New Project / បង្កើតគម្រោងថ្មី</div>
+        <div class="fw-700">Create New Project</div>
         <div class="text-small text-muted">A board with 3 default lists (To Do, Doing, Done) will be created automatically.</div>
       </div>
     </div>
@@ -14,15 +14,15 @@
       <form method="post">
         {% csrf_token %}
         <div class="form-group">
-          <label class="form-label">Project Name / ឈ្មោះគម្រោង <span style="color:var(--red)">*</span></label>
+          <label class="form-label">Project Name<span style="color:var(--red)">*</span></label>
           <input type="text" name="name" class="form-control" placeholder="e.g. Website Redesign" required autofocus>
         </div>
         <div class="form-group">
-          <label class="form-label">Description / ពិពណ៌នា</label>
+          <label class="form-label">Description</label>
           <textarea name="description" class="form-control" rows="3" placeholder="Describe the project goals..."></textarea>
         </div>
         <div class="form-group">
-          <label class="form-label">Deadline / កាលបរិច្ឆេទកំណត់</label>
+          <label class="form-label">Deadline</label>
           <input type="date" name="deadline" class="form-control">
         </div>
         <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px">
@@ -34,3 +34,5 @@
   </div>
 </div>
 {% endblock %}
+
+

@@ -1,11 +1,11 @@
-{% extends 'base.html' %}
+﻿{% extends 'base.html' %}
 
 {% block title %}Dashboard{% endblock %}
-{% block page_title %} Dashboard / ទំព័រដើម {% endblock %}
+{% block page_title %} Dashboard{% endblock %}
 
 {% block topbar_extra %}
-<a href="{% url 'project_create' %}" class="btn btn-primary">
-  <i class="fa-solid fa-plus"></i> New Project
+<a href="{% url 'project_create' %}" class="btn btn-icon btn-primary" title="New Project" aria-label="New Project">
+  <i class="fa-solid fa-plus"></i>
 </a>
 {% endblock %}
 
@@ -38,7 +38,7 @@
   </div>
 </div>
 
-<div style="display:grid; grid-template-columns:1fr 340px; gap:20px;">
+<div class="dashboard-shell">
 
   <!-- LEFT -->
   <div>
@@ -210,3 +210,5 @@ fetch("/api/v1/dashboard/", { credentials: "include" })
 </script>
 
 {% endblock %}
+
+

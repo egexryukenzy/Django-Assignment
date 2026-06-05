@@ -1,41 +1,41 @@
-{% extends 'base.html' %}
+﻿{% extends 'base.html' %}
 {% block title %}Reports{% endblock %}
-{% block page_title %}Reports / របាយការណ៍{% endblock %}
+{% block page_title %}Reports{% endblock %}
 {% block content %}
 <!-- Stats -->
 <div class="grid-4 mb-24">
   <div class="stat-card blue">
     <div class="stat-icon"><i class="fa-solid fa-users"></i></div>
     <div class="stat-number">{{ total_users }}</div>
-    <div class="stat-label">Total Users / អ្នកប្រើសរុប</div>
+    <div class="stat-label">Total Users</div>
   </div>
   <div class="stat-card green">
     <div class="stat-icon"><i class="fa-solid fa-folder"></i></div>
     <div class="stat-number">{{ total_projects }}</div>
-    <div class="stat-label">Total Projects / គម្រោងសរុប</div>
+    <div class="stat-label">Total Projects</div>
   </div>
   <div class="stat-card yellow">
     <div class="stat-icon"><i class="fa-solid fa-list-check"></i></div>
     <div class="stat-number">{{ total_cards }}</div>
-    <div class="stat-label">Total Tasks / ការងារសរុប</div>
+    <div class="stat-label">Total Tasks</div>
   </div>
   <div class="stat-card red">
     <div class="stat-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
     <div class="stat-number">{{ overdue_count }}</div>
-    <div class="stat-label">Overdue Tasks / ហួសកំណត់</div>
+    <div class="stat-label">Overdue Tasks</div>
   </div>
 </div>
 
 <!-- Summary -->
 <div class="grid-2 mb-24">
   <div class="card">
-    <div class="card-header"><div class="fw-700">Task Overview / ទិដ្ឋភាពការងារ</div></div>
+    <div class="card-header"><div class="fw-700">Task Overview</div></div>
     <div class="card-body">
       {% with done_pct=done_cards|stringformat:"d" %}
       <div style="display:flex;flex-direction:column;gap:14px">
         <div>
           <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px">
-            <span style="color:var(--green)"><i class="fa-solid fa-circle-check"></i> Done / បញ្ចប់</span>
+            <span style="color:var(--green)"><i class="fa-solid fa-circle-check"></i> Done</span>
             <span class="fw-700">{{ done_cards }} / {{ total_cards }}</span>
           </div>
           <div class="progress-bar"><div class="progress-fill" style="width:{% if total_cards %}{% widthratio done_cards total_cards 100 %}{% else %}0{% endif %}%"></div></div>
@@ -79,7 +79,7 @@
 
 <!-- Projects Table -->
 <div class="card">
-  <div class="card-header"><div class="fw-700">All Projects Report / របាយការណ៍គម្រោង</div></div>
+  <div class="card-header"><div class="fw-700">All Projects Report</div></div>
   <div class="card-body" style="padding:0">
     <table class="table">
       <thead>
@@ -115,3 +115,5 @@
   </div>
 </div>
 {% endblock %}
+
+

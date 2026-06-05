@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+﻿{% extends 'base.html' %}
 {% block title %}{{ board.name }} – {{ project.name }}{% endblock %}
 {% block page_title %}
 <div style="display:flex;align-items:center;gap:8px">
@@ -139,7 +139,7 @@
     <div class="add-card-form" id="addCardForm-{{ list.id }}">
       <form method="post" action="{% url 'card_create' list.id %}">
         {% csrf_token %}
-        <textarea name="title" class="form-control" rows="2" placeholder="Card title / ចំណងជើង..." required style="margin-bottom:8px;font-size:13px"></textarea>
+        <textarea name="title" class="form-control" rows="2" placeholder="Card title" required style="margin-bottom:8px;font-size:13px"></textarea>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px">
           <select name="priority" class="form-control" style="font-size:12px">
             <option value="low">🟢 Low</option>
@@ -156,7 +156,7 @@
       </form>
     </div>
     <button class="add-card-btn" onclick="toggleAddCard({{ list.id }})">
-      <i class="fa-solid fa-plus"></i> Add card / បន្ថែមការងារ
+      <i class="fa-solid fa-plus"></i> Add card
     </button>
     {% endif %}
   </div>
@@ -166,7 +166,7 @@
   <div style="flex-shrink:0;width:280px">
     <div id="addListToggle">
       <button class="btn btn-secondary" onclick="document.getElementById('addListToggle').style.display='none';document.getElementById('addListForm').style.display='block'" style="width:100%;justify-content:center;border-style:dashed">
-        <i class="fa-solid fa-plus"></i> Add List / បន្ថែមបញ្ជី
+        <i class="fa-solid fa-plus"></i> Add List
       </button>
     </div>
     <div id="addListForm" style="display:none;background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:14px">
@@ -196,12 +196,12 @@
 <div class="modal-overlay" id="filterModal">
   <div class="modal-box">
     <div class="modal-header">
-      <div class="modal-title">Filter Tasks / ត្រងការងារ</div>
+      <div class="modal-title">Filter Tasks</div>
       <button class="modal-close" onclick="hideModal('filterModal')">×</button>
     </div>
     <div class="modal-body">
       <div class="form-group">
-        <label class="form-label">Priority / អាទិភាព</label>
+        <label class="form-label">Priority</label>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <button class="btn btn-sm filter-btn" data-filter="priority" data-value="">All</button>
           <button class="btn btn-sm filter-btn badge-low" data-filter="priority" data-value="low">Low</button>
@@ -211,7 +211,7 @@
         </div>
       </div>
       <div class="form-group">
-        <label class="form-label">Assignee / អ្នកទទួលខុសត្រូវ</label>
+        <label class="form-label">Assignee</label>
         <select id="filterAssignee" class="form-control">
           <option value="">All members</option>
           {% for m in members %}
@@ -231,7 +231,7 @@
 <div class="modal-overlay" id="listEditModal">
   <div class="modal-box" style="max-width:400px">
     <div class="modal-header">
-      <div class="modal-title">Rename List / ប្តូរឈ្មោះបញ្ជី</div>
+      <div class="modal-title">Rename List</div>
       <button class="modal-close" onclick="hideModal('listEditModal')">×</button>
     </div>
     <div class="modal-body">
@@ -368,3 +368,5 @@ function getCookie(name) {
 }
 </script>
 {% endblock %}
+
+
