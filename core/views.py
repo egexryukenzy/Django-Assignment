@@ -91,6 +91,7 @@ def login_view(request):
         user = authenticate(request, username=username, password=password)
         if user:
             login(request, user)
+            request.session.set_expiry(0)
             return redirect("dashboard")
         messages.error(request, "Invalid username or password")
     return render(request, "auth/login.html")
@@ -127,6 +128,7 @@ def register_view(request):
                 user.save()
 
             login(request, user)
+            request.session.set_expiry(0)
             messages.success(request, "Account created successfully!")
             return redirect("dashboard")
 
