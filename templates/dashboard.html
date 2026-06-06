@@ -38,10 +38,9 @@
   </div>
 </div>
 
-<div class="dashboard-shell">
+<div class="dashboard-shell" style="grid-template-columns:minmax(0,1fr); width:100%;">
 
-  <!-- LEFT -->
-  <div>
+  <div style="grid-column:1 / -1; width:100%;">
 
     <!-- Projects -->
     <div class="card mb-24">
@@ -173,41 +172,7 @@
 
   </div>
 
-  <!-- RIGHT -->
-  <div>
-
-    <div class="card">
-      <div class="card-header">
-        <h4>Project Overview</h4>
-      </div>
-      <div class="card-body">
-        <canvas id="projectChart"></canvas>
-      </div>
-    </div>
-
-  </div>
-
 </div>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-fetch("/api/v1/dashboard/", { credentials: "include" })
-  .then(res => res.json())
-  .then(data => {
-    const stats = data.stats;
-
-    new Chart(document.getElementById("projectChart"), {
-      type: "doughnut",
-      data: {
-        labels: ["Done", "Not yet done"],
-        datasets: [{
-          data: [stats.completed_projects, stats.not_done_projects],
-          backgroundColor: ["#22c55e","#94a3b8"]
-        }]
-      }
-    });
-  });
-</script>
 
 {% endblock %}
 

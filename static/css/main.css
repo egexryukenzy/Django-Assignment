@@ -188,9 +188,15 @@ body {
 
 .dashboard-shell {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 340px;
+  grid-template-columns: minmax(0, 1fr);
   gap: 20px;
   align-items: start;
+  width: 100%;
+}
+.dashboard-shell > div,
+.dashboard-shell .card {
+  width: 100%;
+  min-width: 0;
 }
 
 /* ── PROGRESS BAR ── */
@@ -298,7 +304,7 @@ textarea.form-control { resize: vertical; min-height: 80px; }
 .add-card-form { padding: 0 10px 10px; display: none; }
 
 /* ── PROJECT CARDS ── */
-.project-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+.project-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
 .project-card {
   background: var(--bg-card); border: 1px solid var(--border);
   border-radius: 12px; padding: 20px; text-decoration: none; color: inherit;
@@ -337,7 +343,7 @@ textarea.form-control { resize: vertical; min-height: 80px; }
   text-transform: uppercase; letter-spacing: .5px; color: var(--text-muted);
   border-bottom: 1px solid var(--border); }
 .table td { padding: 12px 14px; border-bottom: 1px solid rgba(48,54,61,.5);
-  font-size: 13.5px; }
+  color: var(--text-primary); font-size: 13.5px; }
 .table tr:last-child td { border-bottom: none; }
 .table tr:hover td { background: rgba(255,255,255,.02); }
 
@@ -1032,6 +1038,14 @@ body.admin-crud-theme .search-bar {
   color: #0f172a;
 }
 
+body:not(.light-mode) .dashboard-shell .table th {
+  color: #9fb0c4 !important;
+}
+
+body:not(.light-mode) .dashboard-shell .table td {
+  color: #e6edf3 !important;
+}
+
 .admin-crud-page textarea.form-control {
   min-height: 76px;
 }
@@ -1278,8 +1292,4 @@ body.admin-crud-theme .search-bar {
     flex-shrink: 0;
   }
 
-  .dashboard-shell canvas {
-    max-width: 100%;
-    height: auto !important;
-  }
 }
